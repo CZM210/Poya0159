@@ -1,260 +1,143 @@
 <!DOCTYPE html>
-
-<html lang="zh-TW">
-
+<html>
 <head>
-
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta charset="UTF-8">
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-    <title>全國承租展示系統</title>
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全國承租展示系統 (含圖片版)</title>
     <style>
-
-        body { background-color: #f4f7f6; font-family: "Microsoft JhengHei"; font-size: 14px; padding-bottom: 30px; }
-
-        .item-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 6px solid #ccc; }
-
+        body { background-color: #f4f7f6; font-family: "Microsoft JhengHei", Arial; font-size: 14px; margin: 0; padding: 15px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .item-card { background: white; border-radius: 8px; padding: 15px; margin-bottom: 12px; border-left: 6px solid #ccc; box-shadow: 2px 2px 5px #ddd; overflow: hidden; }
         .status-new { border-left-color: #007bff; background-color: #f0f7ff; }
-
         .status-remove { border-left-color: #dc3545; background-color: #fff8f8; }
-
-        .info-area { line-height: 1.6; color: #555; font-size: 0.9rem; }
-
-        .item-title { font-weight: bold; font-size: 1.15rem; color: #222; display: block; margin-bottom: 8px; }
-
-        .sticky-header { position: sticky; top: 0; background: #f4f7f6; z-index: 1000; padding: 10px 0; border-bottom: 1px solid #ddd; }
-
-        #loading-ui { display:none; text-align:center; padding: 20px; color: #007bff; font-weight: bold; }
-
-        .badge-status { font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; float: right; }
-
+        .item-title { font-weight: bold; font-size: 1.1rem; color: #222; display: block; margin-bottom: 5px; }
+        .sticky-header { position: relative; background: #fff; padding: 15px; border: 1px solid #ddd; margin-bottom: 20px; }
+        .form-control { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box; }
+        .badge { display: inline-block; padding: 3px 8px; color: white; border-radius: 4px; font-size: 12px; float: right; }
+        .bg-primary { background-color: #007bff; }
+        .bg-danger { background-color: #dc3545; }
+        .bg-secondary { background-color: #6c757d; }
+        .img-box { margin-top: 10px; text-align: center; background: #eee; min-height: 50px; }
+        .item-img { max-width: 100%; height: auto; border: 1px solid #ccc; display: none; } /* 預設隱藏，載入成功才顯示 */
+        #loading-ui { display:none; text-align:center; padding: 20px; color: #007bff; }
     </style>
-
 </head>
-
 <body>
-
-<div class="container py-2">
-
-    <div class="sticky-header text-center">
-
-        <h5 class="mb-3">🏪 全國承租系統 (GitHub 版)</h5>
-
-        <select id="f-store" class="form-select mb-2 fw-bold" onchange="fetchStoreData()" style="border: 2px solid #007bff;"></select>
-
-        
-
+<div class="container">
+    <div class="sticky-header">
+        <h2 style="text-align:center;">🏪 全國承租系統</h2>
+        <select id="f-store" class="form-control" onchange="fetchStoreData()"></select>
         <div id="filter-group" style="display:none;">
-
-            <div class="row g-2">
-
-                <div class="col-6"><select id="f-dept" class="form-select" onchange="render()"></select></div>
-
-                <div class="col-6"><select id="f-item" class="form-select" onchange="render()"></select></div>
-
-                <div class="col-12"><input type="text" id="f-search" class="form-control" placeholder="搜尋項目、廠商..." onkeyup="render()"></div>
-
-            </div>
-
+            <select id="f-dept" class="form-control" onchange="render()"></select>
+            <select id="f-item" class="form-control" onchange="render()"></select>
+            <input type="text" id="f-search" class="form-control" placeholder="搜尋關鍵字..." onkeyup="render()">
         </div>
-
     </div>
-
-
-
-
-    <div id="loading-ui">⏳ 正在連線下載分店資料...</div>
-
+    <div id="loading-ui">⏳ 正在載入資料，請稍候...</div>
     <div id="card-container"></div>
-
 </div>
 
-
-
-
 <script>
+    var currentData = [];
 
-    let currentData = [];
-
-
-
-
-    // 1. 初始化：抓取分店清單
+    function ajaxGet(url, callback) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                callback(JSON.parse(xhr.responseText));
+            }
+        };
+        xhr.send();
+    }
 
     window.onload = function() {
-
-        fetch('data/stores.json')
-
-            .then(res => res.json())
-
-            .then(list => {
-
-                let html = '<option value="">--- 請選擇分店 ---</option>';
-
-                list.forEach(s => html += `<option value="${s.id}">${s.id} ${s.name}</option>`);
-
-                document.getElementById('f-store').innerHTML = html;
-
-            })
-
-            .catch(err => alert("無法載入分店清單，請確認 data/stores.json 存在"));
-
+        ajaxGet('data/stores.json', function(list) {
+            var html = '<option value="">--- 請選擇分店 ---</option>';
+            for (var i = 0; i < list.length; i++) {
+                html += '<option value="' + list[i].id + '">' + list[i].id + ' ' + list[i].name + '</option>';
+            }
+            document.getElementById('f-store').innerHTML = html;
+        });
     };
 
-
-
-
-    // 2. 核心：按需抓取分店 JSON (不浪費流量)
-
     function fetchStoreData() {
-
-        const sid = document.getElementById('f-store').value;
-
+        var sid = document.getElementById('f-store').value;
         if (!sid) {
-
             document.getElementById('filter-group').style.display = 'none';
-
             document.getElementById('card-container').innerHTML = '';
-
             return;
-
         }
-
-
-
-
         document.getElementById('loading-ui').style.display = 'block';
+        ajaxGet('data/' + sid + '.json', function(data) {
+            currentData = data;
+            document.getElementById('loading-ui').style.display = 'none';
+            document.getElementById('filter-group').style.display = 'block';
 
-        document.getElementById('filter-group').style.display = 'none';
+            var depts = []; var items = [];
+            for (var i = 0; i < data.length; i++) {
+                if (data[i].部門 && depts.indexOf(data[i].部門) === -1) depts.push(data[i].部門);
+                if (data[i].項目 && items.indexOf(data[i].項目) === -1) items.push(data[i].項目);
+            }
+            depts.sort(); items.sort();
 
+            var deptHtml = '<option value="">-- 全部部門 --</option>';
+            for (var j = 0; j < depts.length; j++) { deptHtml += '<option value="' + depts[j] + '">' + depts[j] + '</option>'; }
+            deptHtml += '<option value="FN">⭐ 只看新增</option><option value="FR">❌ 只看移除</option>';
+            document.getElementById('f-dept').innerHTML = deptHtml;
 
+            var itemHtml = '<option value="">-- 所有項目 --</option>';
+            for (var k = 0; k < items.length; k++) { itemHtml += '<option value="' + items[k] + '">' + items[k] + '</option>'; }
+            document.getElementById('f-item').innerHTML = itemHtml;
 
-
-        fetch(`data/${sid}.json`)
-
-            .then(res => res.json())
-
-            .then(data => {
-
-                currentData = data;
-
-                document.getElementById('loading-ui').style.display = 'none';
-
-                document.getElementById('filter-group').style.display = 'block';
-
-                
-
-                // 更新部門選單
-
-                const depts = [...new Set(currentData.map(d => d.部門))].filter(x => x && x !== "nan").sort();
-
-                document.getElementById('f-dept').innerHTML = '<option value="">-- 全部部門 --</option>' + 
-
-                    depts.map(x => `<option value="${x}">${x}</option>`).join('') +
-
-                    '<option value="FN">⭐ 只看新增</option><option value="FR">❌ 只看移除</option>';
-
-                
-
-                // 更新項目選單
-
-                const items = [...new Set(currentData.map(d => d.項目))].filter(x => x && x !== "nan").sort();
-
-                document.getElementById('f-item').innerHTML = '<option value="">-- 所有項目 --</option>' + 
-
-                    items.map(x => `<option value="${x}">${x}</option>`).join('');
-
-
-
-
-                render();
-
-            })
-
-            .catch(err => alert("載入分店資料失敗"));
-
+            render();
+        });
     }
-
-
-
-
-    // 3. 渲染卡片
 
     function render() {
+        var dVal = document.getElementById('f-dept').value;
+        var iVal = document.getElementById('f-item').value;
+        var sVal = document.getElementById('f-search').value.toLowerCase();
+        var html = '';
 
-        const dVal = document.getElementById('f-dept').value;
+        for (var i = 0; i < currentData.length; i++) {
+            var d = currentData[i];
+            var matchDept = (dVal === "FN") ? (d.比對結果 === "新增") :
+                            (dVal === "FR") ? (d.比對結果 === "移除") :
+                            (dVal === "" || d.部門 === dVal);
+            var matchItem = (iVal === "" || d.項目 === iVal);
+            var matchSearch = (d.承租項目 + d.廠商名稱 + d.廠編).toLowerCase().indexOf(sVal) !== -1;
 
-        const iVal = document.getElementById('f-item').value;
+            if (matchDept && matchItem && matchSearch) {
+                var isNew = (d.比對結果 === "新增");
+                var isRem = (d.比對結果 === "移除");
+                var cssClass = isNew ? "status-new" : (isRem ? "status-remove" : "");
+                var badgeClass = isNew ? "bg-primary" : (isRem ? "bg-danger" : "bg-secondary");
+                
+                html += '<div class="item-card ' + cssClass + '">';
+                html += '  <span class="badge ' + badgeClass + '">' + d.比對結果 + '</span>';
+                html += '  <span class="item-title">' + (isNew ? "⭐ " : (isRem ? "🚫 " : "")) + d.承租項目 + '</span>';
+                html += '  <div>' + d.部門 + ' | ' + d.項目 + ' | ' + d.廠商名稱 + '</div>';
+                html += '  <div style="font-size:0.8rem; color:#888;">' + d.檔期 + ' (' + d.檔期說明 + ')</div>';
+                
+                // 圖片顯示邏輯：如果廠編存在，嘗試讀取照片
+                if (d.img_id && d.img_id !== "") {
+                    var imgUrl = 'photos/' + d.img_id + '.jpg';
+                    html += '<div class="img-box">';
+                    html += '  <img src="' + imgUrl + '" class="item-img" onload="this.style.display='inline-block'" onerror="this.parentNode.style.display='none'">';
+                    html += '</div>';
+                }
 
-        const sVal = document.getElementById('f-search').value.toLowerCase();
-
-        
-
-        const filtered = currentData.filter(d => {
-
-            let mDept = (dVal === "FN") ? (d.比對結果 === "新增") : 
-
-                        (dVal === "FR") ? (d.比對結果 === "移除") : 
-
-                        (dVal === "" || d.部門 === dVal);
-
-            const mItem = iVal === "" || d.項目 === iVal;
-
-            const mSearch = (d.承租項目 + d.廠商名稱 + d.廠編).toLowerCase().includes(sVal);
-
-            return mDept && mItem && mSearch;
-
-        });
-
-        
-
-        document.getElementById('card-container').innerHTML = filtered.map(d => {
-
-            const isNew = d.比對結果 === "新增";
-
-            const isRem = d.比對結果 === "移除";
-
-            const sim = parseFloat(d['相似度不含括弧']) || 0;
-
-            
-
-            let badge = `<span class="badge ${isNew?'bg-primary':isRem?'bg-danger':'bg-secondary'} badge-status">${d.比對結果}</span>`;
-
-            let diff = (sim >= 0.8 && sim < 1 && d.比對名稱) ? `<div style="color:#FF4500; font-weight:bold; border-top:1px dashed #ddd; margin-top:5px; padding-top:5px;">🔍 原項目：${d.比對名稱}</div>` : "";
-
-
-
-
-            return `
-
-            <div class="item-card ${isNew?"status-new":isRem?"status-remove":""}">
-
-                <div class="info-area">
-
-                    ${badge}
-
-                    <span class="item-title">${isNew?"⭐ ":isRem?"🚫 ":""}${d.承租項目}</span>
-
-                    <div>${d.部門} | ${d.項目} | ${d.廠商名稱}</div>
-
-                    <div style="font-size:0.8rem; color:#888;">${d.檔期} (${d.檔期說明})</div>
-
-                    ${diff}
-
-                </div>
-
-            </div>`;
-
-        }).join('');
-
+                var sim = parseFloat(d['相似度不含括弧']) || 0;
+                if (sim >= 0.8 && sim < 1 && d.比對名稱) {
+                    html += '<div style="color:#FF4500; font-weight:bold; border-top:1px dashed #ddd; margin-top:5px; padding-top:5px;">🔍 原項目：' + d.比對名稱 + '</div>';
+                }
+                html += '</div>';
+            }
+        }
+        document.getElementById('card-container').innerHTML = html;
     }
-
 </script>
-
 </body>
-
 </html>
