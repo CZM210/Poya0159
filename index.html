@@ -1,147 +1,109 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>全國承租展示系統 (相容版)</title>
-    <style>
-        body { background-color: #f4f7f6; font-family: "Microsoft JhengHei", Arial; font-size: 14px; margin: 0; padding: 15px; }
-        .container { max-width: 800px; margin: 0 auto; }
-        .item-card { background: white; border-radius: 8px; padding: 15px; margin-bottom: 12px; border-left: 6px solid #ccc; box-shadow: 2px 2px 5px #ddd; }
-        .status-new { border-left-color: #007bff; background-color: #f0f7ff; }
-        .status-remove { border-left-color: #dc3545; background-color: #fff8f8; }
-        .item-title { font-weight: bold; font-size: 1.1rem; color: #222; display: block; margin-bottom: 5px; }
-        .sticky-header { position: relative; background: #fff; padding: 15px; border: 1px solid #ddd; margin-bottom: 20px; }
-        .form-control { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box; }
-        .badge { display: inline-block; padding: 3px 8px; color: white; border-radius: 4px; font-size: 12px; float: right; }
-        .bg-primary { background-color: #007bff; }
-        .bg-danger { background-color: #dc3545; }
-        .bg-secondary { background-color: #6c757d; }
-        #loading-ui { display:none; text-align:center; padding: 20px; color: #007bff; }
-    </style>
-</head>
-<body>
-<div class="container">
-    <div class="sticky-header">
-        <h2 style="text-align:center;">🏪 全國承租系統</h2>
-        <select id="f-store" class="form-control" onchange="fetchStoreData()"></select>
-        <div id="filter-group" style="display:none;">
-            <select id="f-dept" class="form-control" onchange="render()"></select>
-            <select id="f-item" class="form-control" onchange="render()"></select>
-            <input type="text" id="f-search" class="form-control" placeholder="搜尋關鍵字..." onkeyup="render()">
-        </div>
-    </div>
-    <div id="loading-ui">⏳ 正在載入資料，請稍候...</div>
-    <div id="card-container"></div>
-</div>
 
-<script>
-    var currentData = [];
-
-    // 傳統 AJAX 函式 (替代 fetch)
-    function ajaxGet(url, callback) {
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', url, true);
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                callback(JSON.parse(xhr.responseText));
+    <!DOCTYPE html>
+    <html lang="zh-TW">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <title>分店系統授權驗證</title>
+        <style>
+            /* 關鍵修正：讓背景變成絕對純黑且置頂，擋掉後方所有內容 */
+            #auth-overlay { 
+                position: fixed; 
+                top: 0; left: 0; 
+                width: 100vw; height: 100vh; 
+                background: #000; /* 純黑背景，確保擋住後方 */
+                display: flex; 
+                justify-content: center; 
+                align-items: center; 
+                z-index: 999999; /* 超高層級 */
+                color: white;
+                font-family: sans-serif;
             }
-        };
-        xhr.send();
-    }
-
-    // 1. 初始化
-    window.onload = function() {
-        ajaxGet('data/stores.json', function(list) {
-            var html = '<option value="">--- 請選擇分店 ---</option>';
-            for (var i = 0; i < list.length; i++) {
-                html += '<option value="' + list[i].id + '">' + list[i].id + ' ' + list[i].name + '</option>';
+            .card { 
+                background: #1a1a1a; 
+                padding: 30px; 
+                border-radius: 15px; 
+                border: 1px solid #333; 
+                width: 90%; 
+                max-width: 350px; 
+                text-align: center; 
+                box-shadow: 0 10px 30px rgba(0,0,0,1); 
             }
-            document.getElementById('f-store').innerHTML = html;
-        });
-    };
-
-    // 2. 抓取分店資料
-    function fetchStoreData() {
-        var sid = document.getElementById('f-store').value;
-        if (!sid) {
-            document.getElementById('filter-group').style.display = 'none';
-            document.getElementById('card-container').innerHTML = '';
-            return;
-        }
-
-        document.getElementById('loading-ui').style.display = 'block';
-        ajaxGet('data/' + sid + '.json', function(data) {
-            currentData = data;
-            document.getElementById('loading-ui').style.display = 'none';
-            document.getElementById('filter-group').style.display = 'block';
-
-            // 更新選單 (手動排除重複與排序)
-            var depts = [];
-            var items = [];
-            for (var i = 0; i < data.length; i++) {
-                if (data[i].部門 && depts.indexOf(data[i].部門) === -1) depts.push(data[i].部門);
-                if (data[i].項目 && items.indexOf(data[i].項目) === -1) items.push(data[i].項目);
-            }
-            depts.sort();
-            items.sort();
-
-            var deptHtml = '<option value="">-- 全部部門 --</option>';
-            for (var j = 0; j < depts.length; j++) {
-                deptHtml += '<option value="' + depts[j] + '">' + depts[j] + '</option>';
-            }
-            deptHtml += '<option value="FN">⭐ 只看新增</option><option value="FR">❌ 只看移除</option>';
-            document.getElementById('f-dept').innerHTML = deptHtml;
-
-            var itemHtml = '<option value="">-- 所有項目 --</option>';
-            for (var k = 0; k < items.length; k++) {
-                itemHtml += '<option value="' + items[k] + '">' + items[k] + '</option>';
-            }
-            document.getElementById('f-item').innerHTML = itemHtml;
-
-            render();
-        });
-    }
-
-    // 3. 渲染
-    function render() {
-        var dVal = document.getElementById('f-dept').value;
-        var iVal = document.getElementById('f-item').value;
-        var sVal = document.getElementById('f-search').value.toLowerCase();
-        var html = '';
-
-        for (var i = 0; i < currentData.length; i++) {
-            var d = currentData[i];
+            input { width: 100%; padding: 12px; margin: 20px 0; border: 1px solid #444; background: #222; color: #fff; border-radius: 8px; box-sizing: border-box; font-size: 16px; outline: none; }
+            input:focus { border-color: #ff1744; }
+            button { width: 100%; padding: 12px; background: #ff1744; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+            button:disabled { background: #555; cursor: not-allowed; }
+            #msg { color: #ff5252; font-size: 14px; margin-top: 15px; display: none; }
+            .loading { color: #00e5ff; font-size: 12px; display: none; margin-top: 10px; }
             
-            // 過濾邏輯
-            var matchDept = (dVal === "FN") ? (d.比對結果 === "新增") :
-                            (dVal === "FR") ? (d.比對結果 === "移除") :
-                            (dVal === "" || d.部門 === dVal);
-            var matchItem = (iVal === "" || d.項目 === iVal);
-            var matchSearch = (d.承租項目 + d.廠商名稱 + d.廠編).toLowerCase().indexOf(sVal) !== -1;
+            /* 隱藏網頁原始滾動條 */
+            body { overflow: hidden; margin: 0; }
+        </style>
+    </head>
+    <body>
+        <div id="auth-overlay">
+            <div class="card">
+                <h2 style="margin:0 0 10px 0;">身分驗證</h2>
+                <p style="color:#aaa; font-size:14px; margin:0;">本工具僅限授權人員使用<br>登入行為將紀錄設備與 IP</p>
+                <input type="password" id="pw" placeholder="輸入授權密碼" autofocus>
+                <button id="btn" onclick="verify()">確認進入</button>
+                <p id="msg">驗證失敗，請重新輸入</p>
+                <p id="loading" class="loading">安全連線中，請稍候...</p>
+            </div>
+        </div>
 
-            if (matchDept && matchItem && matchSearch) {
-                var isNew = (d.比對結果 === "新增");
-                var isRem = (d.比對結果 === "移除");
-                var cssClass = isNew ? "status-new" : (isRem ? "status-remove" : "");
-                var badgeClass = isNew ? "bg-primary" : (isRem ? "bg-danger" : "bg-secondary");
+        <script>
+            async function verify() {
+                const input = document.getElementById('pw').value;
+                if(!input) return;
+
+                const msg = document.getElementById('msg');
+                const btn = document.getElementById('btn');
+                const loading = document.getElementById('loading');
                 
-                html += '<div class="item-card ' + cssClass + '">';
-                html += '  <span class="badge ' + badgeClass + '">' + d.比對結果 + '</span>';
-                html += '  <span class="item-title">' + (isNew ? "⭐ " : (isRem ? "🚫 " : "")) + d.承租項目 + '</span>';
-                html += '  <div>' + d.部門 + ' | ' + d.項目 + ' | ' + d.廠商名稱 + '</div>';
-                html += '  <div style="font-size:0.8rem; color:#888;">' + d.檔期 + ' (' + d.檔期說明 + ')</div>';
-                
-                var sim = parseFloat(d['相似度不含括弧']) || 0;
-                if (sim >= 0.8 && sim < 1 && d.比對名稱) {
-                    html += '<div style="color:#FF4500; font-weight:bold; border-top:1px dashed #ddd; margin-top:5px; padding-top:5px;">🔍 原項目：' + d.比對名稱 + '</div>';
+                msg.style.display = 'none';
+                loading.style.display = 'block';
+                btn.disabled = true;
+
+                let ip = "unknown";
+                try { 
+                    const res = await fetch("https://api.ipify.org?format=json");
+                    const d = await res.json(); ip = d.ip;
+                } catch(e) {}
+
+                const ua = navigator.userAgent;
+                const currentUrl = window.location.href;
+
+                try {
+                    const gasBaseUrl = "https://script.google.com/macros/s/AKfycbxKU5oPRRYO3MLzGbJKCVNTued7gmZYxh1srNYJcjhUyJ1RGsoQ5T8uqaLSdownmjxO/exec";
+                    const fetchUrl = `${gasBaseUrl}?password=${encodeURIComponent(input)}&ip=${encodeURIComponent(ip)}&device=${encodeURIComponent(ua)}&url=${encodeURIComponent(currentUrl)}`;
+                    
+                    const response = await fetch(fetchUrl);
+                    const result = await response.json();
+
+                    if (result.success === true) {
+                        const decoded = decodeURIComponent(atob("JTNDJTIxRE9DVFlQRSUyMGh0bWwlM0UlMEElM0NodG1sJTNFJTBBJTNDaGVhZCUzRSUwQSUyMCUyMCUyMCUyMCUzQ21ldGElMjBodHRwLWVxdWl2JTNEJTIyWC1VQS1Db21wYXRpYmxlJTIyJTIwY29udGVudCUzRCUyMklFJTNEZWRnZSUyMiUzRSUwQSUyMCUyMCUyMCUyMCUzQ21ldGElMjBjaGFyc2V0JTNEJTIyVVRGLTglMjIlM0UlMEElMjAlMjAlMjAlMjAlM0NtZXRhJTIwbmFtZSUzRCUyMnZpZXdwb3J0JTIyJTIwY29udGVudCUzRCUyMndpZHRoJTNEZGV2aWNlLXdpZHRoJTJDJTIwaW5pdGlhbC1zY2FsZSUzRDEuMCUyMiUzRSUwQSUyMCUyMCUyMCUyMCUzQ3RpdGxlJTNFJUU1JTg1JUE4JUU1JTlDJThCJUU2JTg5JUJGJUU3JUE3JTlGJUU1JUIxJTk1JUU3JUE0JUJBJUU3JUIzJUJCJUU3JUI1JUIxJTIwJTI4JUU3JTlCJUI4JUU1JUFFJUI5JUU3JTg5JTg4JTI5JTNDL3RpdGxlJTNFJTBBJTIwJTIwJTIwJTIwJTNDc3R5bGUlM0UlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjBib2R5JTIwJTdCJTIwYmFja2dyb3VuZC1jb2xvciUzQSUyMCUyM2Y0ZjdmNiUzQiUyMGZvbnQtZmFtaWx5JTNBJTIwJTIyTWljcm9zb2Z0JTIwSmhlbmdIZWklMjIlMkMlMjBBcmlhbCUzQiUyMGZvbnQtc2l6ZSUzQSUyMDE0cHglM0IlMjBtYXJnaW4lM0ElMjAwJTNCJTIwcGFkZGluZyUzQSUyMDE1cHglM0IlMjAlN0QlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAuY29udGFpbmVyJTIwJTdCJTIwbWF4LXdpZHRoJTNBJTIwODAwcHglM0IlMjBtYXJnaW4lM0ElMjAwJTIwYXV0byUzQiUyMCU3RCUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMC5pdGVtLWNhcmQlMjAlN0IlMjBiYWNrZ3JvdW5kJTNBJTIwd2hpdGUlM0IlMjBib3JkZXItcmFkaXVzJTNBJTIwOHB4JTNCJTIwcGFkZGluZyUzQSUyMDE1cHglM0IlMjBtYXJnaW4tYm90dG9tJTNBJTIwMTJweCUzQiUyMGJvcmRlci1sZWZ0JTNBJTIwNnB4JTIwc29saWQlMjAlMjNjY2MlM0IlMjBib3gtc2hhZG93JTNBJTIwMnB4JTIwMnB4JTIwNXB4JTIwJTIzZGRkJTNCJTIwJTdEJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwLnN0YXR1cy1uZXclMjAlN0IlMjBib3JkZXItbGVmdC1jb2xvciUzQSUyMCUyMzAwN2JmZiUzQiUyMGJhY2tncm91bmQtY29sb3IlM0ElMjAlMjNmMGY3ZmYlM0IlMjAlN0QlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAuc3RhdHVzLXJlbW92ZSUyMCU3QiUyMGJvcmRlci1sZWZ0LWNvbG9yJTNBJTIwJTIzZGMzNTQ1JTNCJTIwYmFja2dyb3VuZC1jb2xvciUzQSUyMCUyM2ZmZjhmOCUzQiUyMCU3RCUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMC5pdGVtLXRpdGxlJTIwJTdCJTIwZm9udC13ZWlnaHQlM0ElMjBib2xkJTNCJTIwZm9udC1zaXplJTNBJTIwMS4xcmVtJTNCJTIwY29sb3IlM0ElMjAlMjMyMjIlM0IlMjBkaXNwbGF5JTNBJTIwYmxvY2slM0IlMjBtYXJnaW4tYm90dG9tJTNBJTIwNXB4JTNCJTIwJTdEJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwLnN0aWNreS1oZWFkZXIlMjAlN0IlMjBwb3NpdGlvbiUzQSUyMHJlbGF0aXZlJTNCJTIwYmFja2dyb3VuZCUzQSUyMCUyM2ZmZiUzQiUyMHBhZGRpbmclM0ElMjAxNXB4JTNCJTIwYm9yZGVyJTNBJTIwMXB4JTIwc29saWQlMjAlMjNkZGQlM0IlMjBtYXJnaW4tYm90dG9tJTNBJTIwMjBweCUzQiUyMCU3RCUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMC5mb3JtLWNvbnRyb2wlMjAlN0IlMjB3aWR0aCUzQSUyMDEwMCUyNSUzQiUyMHBhZGRpbmclM0ElMjA4cHglM0IlMjBtYXJnaW4tYm90dG9tJTNBJTIwMTBweCUzQiUyMGJveC1zaXppbmclM0ElMjBib3JkZXItYm94JTNCJTIwJTdEJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwLmJhZGdlJTIwJTdCJTIwZGlzcGxheSUzQSUyMGlubGluZS1ibG9jayUzQiUyMHBhZGRpbmclM0ElMjAzcHglMjA4cHglM0IlMjBjb2xvciUzQSUyMHdoaXRlJTNCJTIwYm9yZGVyLXJhZGl1cyUzQSUyMDRweCUzQiUyMGZvbnQtc2l6ZSUzQSUyMDEycHglM0IlMjBmbG9hdCUzQSUyMHJpZ2h0JTNCJTIwJTdEJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwLmJnLXByaW1hcnklMjAlN0IlMjBiYWNrZ3JvdW5kLWNvbG9yJTNBJTIwJTIzMDA3YmZmJTNCJTIwJTdEJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwLmJnLWRhbmdlciUyMCU3QiUyMGJhY2tncm91bmQtY29sb3IlM0ElMjAlMjNkYzM1NDUlM0IlMjAlN0QlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAuYmctc2Vjb25kYXJ5JTIwJTdCJTIwYmFja2dyb3VuZC1jb2xvciUzQSUyMCUyMzZjNzU3ZCUzQiUyMCU3RCUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyM2xvYWRpbmctdWklMjAlN0IlMjBkaXNwbGF5JTNBbm9uZSUzQiUyMHRleHQtYWxpZ24lM0FjZW50ZXIlM0IlMjBwYWRkaW5nJTNBJTIwMjBweCUzQiUyMGNvbG9yJTNBJTIwJTIzMDA3YmZmJTNCJTIwJTdEJTBBJTIwJTIwJTIwJTIwJTNDL3N0eWxlJTNFJTBBJTNDL2hlYWQlM0UlMEElM0Nib2R5JTNFJTBBJTNDZGl2JTIwY2xhc3MlM0QlMjJjb250YWluZXIlMjIlM0UlMEElMjAlMjAlMjAlMjAlM0NkaXYlMjBjbGFzcyUzRCUyMnN0aWNreS1oZWFkZXIlMjIlM0UlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlM0NoMiUyMHN0eWxlJTNEJTIydGV4dC1hbGlnbiUzQWNlbnRlciUzQiUyMiUzRSVGMCU5RiU4RiVBQSUyMCVFNSU4NSVBOCVFNSU5QyU4QiVFNiU4OSVCRiVFNyVBNyU5RiVFNyVCMyVCQiVFNyVCNSVCMSUzQy9oMiUzRSUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUzQ3NlbGVjdCUyMGlkJTNEJTIyZi1zdG9yZSUyMiUyMGNsYXNzJTNEJTIyZm9ybS1jb250cm9sJTIyJTIwb25jaGFuZ2UlM0QlMjJmZXRjaFN0b3JlRGF0YSUyOCUyOSUyMiUzRSUzQy9zZWxlY3QlM0UlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlM0NkaXYlMjBpZCUzRCUyMmZpbHRlci1ncm91cCUyMiUyMHN0eWxlJTNEJTIyZGlzcGxheSUzQW5vbmUlM0IlMjIlM0UlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlM0NzZWxlY3QlMjBpZCUzRCUyMmYtZGVwdCUyMiUyMGNsYXNzJTNEJTIyZm9ybS1jb250cm9sJTIyJTIwb25jaGFuZ2UlM0QlMjJyZW5kZXIlMjglMjklMjIlM0UlM0Mvc2VsZWN0JTNFJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTNDc2VsZWN0JTIwaWQlM0QlMjJmLWl0ZW0lMjIlMjBjbGFzcyUzRCUyMmZvcm0tY29udHJvbCUyMiUyMG9uY2hhbmdlJTNEJTIycmVuZGVyJTI4JTI5JTIyJTNFJTNDL3NlbGVjdCUzRSUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUzQ2lucHV0JTIwdHlwZSUzRCUyMnRleHQlMjIlMjBpZCUzRCUyMmYtc2VhcmNoJTIyJTIwY2xhc3MlM0QlMjJmb3JtLWNvbnRyb2wlMjIlMjBwbGFjZWhvbGRlciUzRCUyMiVFNiU5MCU5QyVFNSVCMCU4QiVFOSU5NyU5QyVFOSU4RCVCNSVFNSVBRCU5Ny4uLiUyMiUyMG9ua2V5dXAlM0QlMjJyZW5kZXIlMjglMjklMjIlM0UlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlM0MvZGl2JTNFJTBBJTIwJTIwJTIwJTIwJTNDL2RpdiUzRSUwQSUyMCUyMCUyMCUyMCUzQ2RpdiUyMGlkJTNEJTIybG9hZGluZy11aSUyMiUzRSVFMiU4RiVCMyUyMCVFNiVBRCVBMyVFNSU5QyVBOCVFOCVCQyU4OSVFNSU4NSVBNSVFOCVCMyU4NyVFNiU5NiU5OSVFRiVCQyU4QyVFOCVBQiU4QiVFNyVBOCU4RCVFNSU4MCU5OS4uLiUzQy9kaXYlM0UlMEElMjAlMjAlMjAlMjAlM0NkaXYlMjBpZCUzRCUyMmNhcmQtY29udGFpbmVyJTIyJTNFJTNDL2RpdiUzRSUwQSUzQy9kaXYlM0UlMEElMEElM0NzY3JpcHQlM0UlMEElMjAlMjAlMjAlMjB2YXIlMjBjdXJyZW50RGF0YSUyMCUzRCUyMCU1QiU1RCUzQiUwQSUwQSUyMCUyMCUyMCUyMC8vJTIwJUU1JTgyJUIzJUU3JUI1JUIxJTIwQUpBWCUyMCVFNSU4NyVCRCVFNSVCQyU4RiUyMCUyOCVFNiU5QiVCRiVFNCVCQiVBMyUyMGZldGNoJTI5JTBBJTIwJTIwJTIwJTIwZnVuY3Rpb24lMjBhamF4R2V0JTI4dXJsJTJDJTIwY2FsbGJhY2slMjklMjAlN0IlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjB2YXIlMjB4aHIlMjAlM0QlMjBuZXclMjBYTUxIdHRwUmVxdWVzdCUyOCUyOSUzQiUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMHhoci5vcGVuJTI4JTI3R0VUJTI3JTJDJTIwdXJsJTJDJTIwdHJ1ZSUyOSUzQiUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMHhoci5vbnJlYWR5c3RhdGVjaGFuZ2UlMjAlM0QlMjBmdW5jdGlvbiUyOCUyOSUyMCU3QiUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMGlmJTIwJTI4eGhyLnJlYWR5U3RhdGUlMjAlM0QlM0QlM0QlMjA0JTIwJTI2JTI2JTIweGhyLnN0YXR1cyUyMCUzRCUzRCUzRCUyMDIwMCUyOSUyMCU3QiUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMGNhbGxiYWNrJTI4SlNPTi5wYXJzZSUyOHhoci5yZXNwb25zZVRleHQlMjklMjklM0IlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlN0QlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlN0QlM0IlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjB4aHIuc2VuZCUyOCUyOSUzQiUwQSUyMCUyMCUyMCUyMCU3RCUwQSUwQSUyMCUyMCUyMCUyMC8vJTIwMS4lMjAlRTUlODglOUQlRTUlQTclOEIlRTUlOEMlOTYlMEElMjAlMjAlMjAlMjB3aW5kb3cub25sb2FkJTIwJTNEJTIwZnVuY3Rpb24lMjglMjklMjAlN0IlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjBhamF4R2V0JTI4JTI3ZGF0YS9zdG9yZXMuanNvbiUyNyUyQyUyMGZ1bmN0aW9uJTI4bGlzdCUyOSUyMCU3QiUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMHZhciUyMGh0bWwlMjAlM0QlMjAlMjclM0NvcHRpb24lMjB2YWx1ZSUzRCUyMiUyMiUzRS0tLSUyMCVFOCVBQiU4QiVFOSU4MSVCOCVFNiU5MyU4NyVFNSU4OCU4NiVFNSVCQSU5NyUyMC0tLSUzQy9vcHRpb24lM0UlMjclM0IlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjBmb3IlMjAlMjh2YXIlMjBpJTIwJTNEJTIwMCUzQiUyMGklMjAlM0MlMjBsaXN0Lmxlbmd0aCUzQiUyMGklMkIlMkIlMjklMjAlN0IlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjBodG1sJTIwJTJCJTNEJTIwJTI3JTNDb3B0aW9uJTIwdmFsdWUlM0QlMjIlMjclMjAlMkIlMjBsaXN0JTVCaSU1RC5pZCUyMCUyQiUyMCUyNyUyMiUzRSUyNyUyMCUyQiUyMGxpc3QlNUJpJTVELmlkJTIwJTJCJTIwJTI3JTIwJTI3JTIwJTJCJTIwbGlzdCU1QmklNUQubmFtZSUyMCUyQiUyMCUyNyUzQy9vcHRpb24lM0UlMjclM0IlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlN0QlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCUyOCUyN2Ytc3RvcmUlMjclMjkuaW5uZXJIVE1MJTIwJTNEJTIwaHRtbCUzQiUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCU3RCUyOSUzQiUwQSUyMCUyMCUyMCUyMCU3RCUzQiUwQSUwQSUyMCUyMCUyMCUyMC8vJTIwMi4lMjAlRTYlOEElOTMlRTUlOEYlOTYlRTUlODglODYlRTUlQkElOTclRTglQjMlODclRTYlOTYlOTklMEElMjAlMjAlMjAlMjBmdW5jdGlvbiUyMGZldGNoU3RvcmVEYXRhJTI4JTI5JTIwJTdCJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwdmFyJTIwc2lkJTIwJTNEJTIwZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQlMjglMjdmLXN0b3JlJTI3JTI5LnZhbHVlJTNCJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwaWYlMjAlMjglMjFzaWQlMjklMjAlN0IlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCUyOCUyN2ZpbHRlci1ncm91cCUyNyUyOS5zdHlsZS5kaXNwbGF5JTIwJTNEJTIwJTI3bm9uZSUyNyUzQiUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMGRvY3VtZW50LmdldEVsZW1lbnRCeUlkJTI4JTI3Y2FyZC1jb250YWluZXIlMjclMjkuaW5uZXJIVE1MJTIwJTNEJTIwJTI3JTI3JTNCJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwcmV0dXJuJTNCJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTdEJTBBJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQlMjglMjdsb2FkaW5nLXVpJTI3JTI5LnN0eWxlLmRpc3BsYXklMjAlM0QlMjAlMjdibG9jayUyNyUzQiUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMGFqYXhHZXQlMjglMjdkYXRhLyUyNyUyMCUyQiUyMHNpZCUyMCUyQiUyMCUyNy5qc29uJTI3JTJDJTIwZnVuY3Rpb24lMjhkYXRhJTI5JTIwJTdCJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwY3VycmVudERhdGElMjAlM0QlMjBkYXRhJTNCJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQlMjglMjdsb2FkaW5nLXVpJTI3JTI5LnN0eWxlLmRpc3BsYXklMjAlM0QlMjAlMjdub25lJTI3JTNCJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQlMjglMjdmaWx0ZXItZ3JvdXAlMjclMjkuc3R5bGUuZGlzcGxheSUyMCUzRCUyMCUyN2Jsb2NrJTI3JTNCJTBBJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwLy8lMjAlRTYlOUIlQjQlRTYlOTYlQjAlRTklODElQjglRTUlOTYlQUUlMjAlMjglRTYlODklOEIlRTUlOEIlOTUlRTYlOEUlOTIlRTklOTklQTQlRTklODclOEQlRTglQTQlODclRTglODglODclRTYlOEUlOTIlRTUlQkElOEYlMjklMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjB2YXIlMjBkZXB0cyUyMCUzRCUyMCU1QiU1RCUzQiUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMHZhciUyMGl0ZW1zJTIwJTNEJTIwJTVCJTVEJTNCJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwZm9yJTIwJTI4dmFyJTIwaSUyMCUzRCUyMDAlM0IlMjBpJTIwJTNDJTIwZGF0YS5sZW5ndGglM0IlMjBpJTJCJTJCJTI5JTIwJTdCJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwaWYlMjAlMjhkYXRhJTVCaSU1RC4lRTklODMlQTglRTklOTYlODAlMjAlMjYlMjYlMjBkZXB0cy5pbmRleE9mJTI4ZGF0YSU1QmklNUQuJUU5JTgzJUE4JUU5JTk2JTgwJTI5JTIwJTNEJTNEJTNEJTIwLTElMjklMjBkZXB0cy5wdXNoJTI4ZGF0YSU1QmklNUQuJUU5JTgzJUE4JUU5JTk2JTgwJTI5JTNCJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwaWYlMjAlMjhkYXRhJTVCaSU1RC4lRTklQTAlODUlRTclOUIlQUUlMjAlMjYlMjYlMjBpdGVtcy5pbmRleE9mJTI4ZGF0YSU1QmklNUQuJUU5JUEwJTg1JUU3JTlCJUFFJTI5JTIwJTNEJTNEJTNEJTIwLTElMjklMjBpdGVtcy5wdXNoJTI4ZGF0YSU1QmklNUQuJUU5JUEwJTg1JUU3JTlCJUFFJTI5JTNCJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTdEJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwZGVwdHMuc29ydCUyOCUyOSUzQiUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMGl0ZW1zLnNvcnQlMjglMjklM0IlMEElMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjB2YXIlMjBkZXB0SHRtbCUyMCUzRCUyMCUyNyUzQ29wdGlvbiUyMHZhbHVlJTNEJTIyJTIyJTNFLS0lMjAlRTUlODUlQTglRTklODMlQTglRTklODMlQTglRTklOTYlODAlMjAtLSUzQy9vcHRpb24lM0UlMjclM0IlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjBmb3IlMjAlMjh2YXIlMjBqJTIwJTNEJTIwMCUzQiUyMGolMjAlM0MlMjBkZXB0cy5sZW5ndGglM0IlMjBqJTJCJTJCJTI5JTIwJTdCJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwZGVwdEh0bWwlMjAlMkIlM0QlMjAlMjclM0NvcHRpb24lMjB2YWx1ZSUzRCUyMiUyNyUyMCUyQiUyMGRlcHRzJTVCaiU1RCUyMCUyQiUyMCUyNyUyMiUzRSUyNyUyMCUyQiUyMGRlcHRzJTVCaiU1RCUyMCUyQiUyMCUyNyUzQy9vcHRpb24lM0UlMjclM0IlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlN0QlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjBkZXB0SHRtbCUyMCUyQiUzRCUyMCUyNyUzQ29wdGlvbiUyMHZhbHVlJTNEJTIyRk4lMjIlM0UlRTIlQUQlOTAlMjAlRTUlOEYlQUElRTclOUMlOEIlRTYlOTYlQjAlRTUlQTIlOUUlM0Mvb3B0aW9uJTNFJTNDb3B0aW9uJTIwdmFsdWUlM0QlMjJGUiUyMiUzRSVFMiU5RCU4QyUyMCVFNSU4RiVBQSVFNyU5QyU4QiVFNyVBNyVCQiVFOSU5OSVBNCUzQy9vcHRpb24lM0UlMjclM0IlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCUyOCUyN2YtZGVwdCUyNyUyOS5pbm5lckhUTUwlMjAlM0QlMjBkZXB0SHRtbCUzQiUwQSUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMHZhciUyMGl0ZW1IdG1sJTIwJTNEJTIwJTI3JTNDb3B0aW9uJTIwdmFsdWUlM0QlMjIlMjIlM0UtLSUyMCVFNiU4OSU4MCVFNiU5QyU4OSVFOSVBMCU4NSVFNyU5QiVBRSUyMC0tJTNDL29wdGlvbiUzRSUyNyUzQiUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMGZvciUyMCUyOHZhciUyMGslMjAlM0QlMjAwJTNCJTIwayUyMCUzQyUyMGl0ZW1zLmxlbmd0aCUzQiUyMGslMkIlMkIlMjklMjAlN0IlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjBpdGVtSHRtbCUyMCUyQiUzRCUyMCUyNyUzQ29wdGlvbiUyMHZhbHVlJTNEJTIyJTI3JTIwJTJCJTIwaXRlbXMlNUJrJTVEJTIwJTJCJTIwJTI3JTIyJTNFJTI3JTIwJTJCJTIwaXRlbXMlNUJrJTVEJTIwJTJCJTIwJTI3JTNDL29wdGlvbiUzRSUyNyUzQiUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCU3RCUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMGRvY3VtZW50LmdldEVsZW1lbnRCeUlkJTI4JTI3Zi1pdGVtJTI3JTI5LmlubmVySFRNTCUyMCUzRCUyMGl0ZW1IdG1sJTNCJTBBJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwcmVuZGVyJTI4JTI5JTNCJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTdEJTI5JTNCJTBBJTIwJTIwJTIwJTIwJTdEJTBBJTBBJTIwJTIwJTIwJTIwLy8lMjAzLiUyMCVFNiVCOCVCMiVFNiU5RiU5MyUwQSUyMCUyMCUyMCUyMGZ1bmN0aW9uJTIwcmVuZGVyJTI4JTI5JTIwJTdCJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwdmFyJTIwZFZhbCUyMCUzRCUyMGRvY3VtZW50LmdldEVsZW1lbnRCeUlkJTI4JTI3Zi1kZXB0JTI3JTI5LnZhbHVlJTNCJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwdmFyJTIwaVZhbCUyMCUzRCUyMGRvY3VtZW50LmdldEVsZW1lbnRCeUlkJTI4JTI3Zi1pdGVtJTI3JTI5LnZhbHVlJTNCJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwdmFyJTIwc1ZhbCUyMCUzRCUyMGRvY3VtZW50LmdldEVsZW1lbnRCeUlkJTI4JTI3Zi1zZWFyY2glMjclMjkudmFsdWUudG9Mb3dlckNhc2UlMjglMjklM0IlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjB2YXIlMjBodG1sJTIwJTNEJTIwJTI3JTI3JTNCJTBBJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwZm9yJTIwJTI4dmFyJTIwaSUyMCUzRCUyMDAlM0IlMjBpJTIwJTNDJTIwY3VycmVudERhdGEubGVuZ3RoJTNCJTIwaSUyQiUyQiUyOSUyMCU3QiUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMHZhciUyMGQlMjAlM0QlMjBjdXJyZW50RGF0YSU1QmklNUQlM0IlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAvLyUyMCVFOSU4MSU4RSVFNiVCRiVCRSVFOSU4MiU4RiVFOCVCQyVBRiUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMHZhciUyMG1hdGNoRGVwdCUyMCUzRCUyMCUyOGRWYWwlMjAlM0QlM0QlM0QlMjAlMjJGTiUyMiUyOSUyMCUzRiUyMCUyOGQuJUU2JUFGJTk0JUU1JUIwJThEJUU3JUI1JTkwJUU2JTlFJTlDJTIwJTNEJTNEJTNEJTIwJTIyJUU2JTk2JUIwJUU1JUEyJTlFJTIyJTI5JTIwJTNBJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTI4ZFZhbCUyMCUzRCUzRCUzRCUyMCUyMkZSJTIyJTI5JTIwJTNGJTIwJTI4ZC4lRTYlQUYlOTQlRTUlQjAlOEQlRTclQjUlOTAlRTYlOUUlOUMlMjAlM0QlM0QlM0QlMjAlMjIlRTclQTclQkIlRTklOTklQTQlMjIlMjklMjAlM0ElMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjhkVmFsJTIwJTNEJTNEJTNEJTIwJTIyJTIyJTIwJTdDJTdDJTIwZC4lRTklODMlQTglRTklOTYlODAlMjAlM0QlM0QlM0QlMjBkVmFsJTI5JTNCJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwdmFyJTIwbWF0Y2hJdGVtJTIwJTNEJTIwJTI4aVZhbCUyMCUzRCUzRCUzRCUyMCUyMiUyMiUyMCU3QyU3QyUyMGQuJUU5JUEwJTg1JUU3JTlCJUFFJTIwJTNEJTNEJTNEJTIwaVZhbCUyOSUzQiUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMHZhciUyMG1hdGNoU2VhcmNoJTIwJTNEJTIwJTI4ZC4lRTYlODklQkYlRTclQTclOUYlRTklQTAlODUlRTclOUIlQUUlMjAlMkIlMjBkLiVFNSVCQiVBMCVFNSU5NSU4NiVFNSU5MCU4RCVFNyVBOCVCMSUyMCUyQiUyMGQuJUU1JUJCJUEwJUU3JUI3JUE4JTI5LnRvTG93ZXJDYXNlJTI4JTI5LmluZGV4T2YlMjhzVmFsJTI5JTIwJTIxJTNEJTNEJTIwLTElM0IlMEElMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjBpZiUyMCUyOG1hdGNoRGVwdCUyMCUyNiUyNiUyMG1hdGNoSXRlbSUyMCUyNiUyNiUyMG1hdGNoU2VhcmNoJTI5JTIwJTdCJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwdmFyJTIwaXNOZXclMjAlM0QlMjAlMjhkLiVFNiVBRiU5NCVFNSVCMCU4RCVFNyVCNSU5MCVFNiU5RSU5QyUyMCUzRCUzRCUzRCUyMCUyMiVFNiU5NiVCMCVFNSVBMiU5RSUyMiUyOSUzQiUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMHZhciUyMGlzUmVtJTIwJTNEJTIwJTI4ZC4lRTYlQUYlOTQlRTUlQjAlOEQlRTclQjUlOTAlRTYlOUUlOUMlMjAlM0QlM0QlM0QlMjAlMjIlRTclQTclQkIlRTklOTklQTQlMjIlMjklM0IlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjB2YXIlMjBjc3NDbGFzcyUyMCUzRCUyMGlzTmV3JTIwJTNGJTIwJTIyc3RhdHVzLW5ldyUyMiUyMCUzQSUyMCUyOGlzUmVtJTIwJTNGJTIwJTIyc3RhdHVzLXJlbW92ZSUyMiUyMCUzQSUyMCUyMiUyMiUyOSUzQiUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMHZhciUyMGJhZGdlQ2xhc3MlMjAlM0QlMjBpc05ldyUyMCUzRiUyMCUyMmJnLXByaW1hcnklMjIlMjAlM0ElMjAlMjhpc1JlbSUyMCUzRiUyMCUyMmJnLWRhbmdlciUyMiUyMCUzQSUyMCUyMmJnLXNlY29uZGFyeSUyMiUyOSUzQiUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMGh0bWwlMjAlMkIlM0QlMjAlMjclM0NkaXYlMjBjbGFzcyUzRCUyMml0ZW0tY2FyZCUyMCUyNyUyMCUyQiUyMGNzc0NsYXNzJTIwJTJCJTIwJTI3JTIyJTNFJTI3JTNCJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwaHRtbCUyMCUyQiUzRCUyMCUyNyUyMCUyMCUzQ3NwYW4lMjBjbGFzcyUzRCUyMmJhZGdlJTIwJTI3JTIwJTJCJTIwYmFkZ2VDbGFzcyUyMCUyQiUyMCUyNyUyMiUzRSUyNyUyMCUyQiUyMGQuJUU2JUFGJTk0JUU1JUIwJThEJUU3JUI1JTkwJUU2JTlFJTlDJTIwJTJCJTIwJTI3JTNDL3NwYW4lM0UlMjclM0IlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjBodG1sJTIwJTJCJTNEJTIwJTI3JTIwJTIwJTNDc3BhbiUyMGNsYXNzJTNEJTIyaXRlbS10aXRsZSUyMiUzRSUyNyUyMCUyQiUyMCUyOGlzTmV3JTIwJTNGJTIwJTIyJUUyJUFEJTkwJTIwJTIyJTIwJTNBJTIwJTI4aXNSZW0lMjAlM0YlMjAlMjIlRjAlOUYlOUElQUIlMjAlMjIlMjAlM0ElMjAlMjIlMjIlMjklMjklMjAlMkIlMjBkLiVFNiU4OSVCRiVFNyVBNyU5RiVFOSVBMCU4NSVFNyU5QiVBRSUyMCUyQiUyMCUyNyUzQy9zcGFuJTNFJTI3JTNCJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwaHRtbCUyMCUyQiUzRCUyMCUyNyUyMCUyMCUzQ2RpdiUzRSUyNyUyMCUyQiUyMGQuJUU5JTgzJUE4JUU5JTk2JTgwJTIwJTJCJTIwJTI3JTIwJTdDJTIwJTI3JTIwJTJCJTIwZC4lRTklQTAlODUlRTclOUIlQUUlMjAlMkIlMjAlMjclMjAlN0MlMjAlMjclMjAlMkIlMjBkLiVFNSVCQiVBMCVFNSU5NSU4NiVFNSU5MCU4RCVFNyVBOCVCMSUyMCUyQiUyMCUyNyUzQy9kaXYlM0UlMjclM0IlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjBodG1sJTIwJTJCJTNEJTIwJTI3JTIwJTIwJTNDZGl2JTIwc3R5bGUlM0QlMjJmb250LXNpemUlM0EwLjhyZW0lM0IlMjBjb2xvciUzQSUyMzg4OCUzQiUyMiUzRSUyNyUyMCUyQiUyMGQuJUU2JUFBJTk0JUU2JTlDJTlGJTIwJTJCJTIwJTI3JTIwJTI4JTI3JTIwJTJCJTIwZC4lRTYlQUElOTQlRTYlOUMlOUYlRTglQUElQUElRTYlOTglOEUlMjAlMkIlMjAlMjclMjklM0MvZGl2JTNFJTI3JTNCJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwdmFyJTIwc2ltJTIwJTNEJTIwcGFyc2VGbG9hdCUyOGQlNUIlMjclRTclOUIlQjglRTQlQkMlQkMlRTUlQkElQTYlRTQlQjglOEQlRTUlOTAlQUIlRTYlOEIlQUMlRTUlQkMlQTclMjclNUQlMjklMjAlN0MlN0MlMjAwJTNCJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwaWYlMjAlMjhzaW0lMjAlM0UlM0QlMjAwLjglMjAlMjYlMjYlMjBzaW0lMjAlM0MlMjAxJTIwJTI2JTI2JTIwZC4lRTYlQUYlOTQlRTUlQjAlOEQlRTUlOTAlOEQlRTclQTglQjElMjklMjAlN0IlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjBodG1sJTIwJTJCJTNEJTIwJTI3JTNDZGl2JTIwc3R5bGUlM0QlMjJjb2xvciUzQSUyM0ZGNDUwMCUzQiUyMGZvbnQtd2VpZ2h0JTNBYm9sZCUzQiUyMGJvcmRlci10b3AlM0ExcHglMjBkYXNoZWQlMjAlMjNkZGQlM0IlMjBtYXJnaW4tdG9wJTNBNXB4JTNCJTIwcGFkZGluZy10b3AlM0E1cHglM0IlMjIlM0UlRjAlOUYlOTQlOEQlMjAlRTUlOEUlOUYlRTklQTAlODUlRTclOUIlQUUlRUYlQkMlOUElMjclMjAlMkIlMjBkLiVFNiVBRiU5NCVFNSVCMCU4RCVFNSU5MCU4RCVFNyVBOCVCMSUyMCUyQiUyMCUyNyUzQy9kaXYlM0UlMjclM0IlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlN0QlMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjBodG1sJTIwJTJCJTNEJTIwJTI3JTNDL2RpdiUzRSUyNyUzQiUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCU3RCUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCU3RCUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMGRvY3VtZW50LmdldEVsZW1lbnRCeUlkJTI4JTI3Y2FyZC1jb250YWluZXIlMjclMjkuaW5uZXJIVE1MJTIwJTNEJTIwaHRtbCUzQiUwQSUyMCUyMCUyMCUyMCU3RCUwQSUzQy9zY3JpcHQlM0UlMEElM0MvYm9keSUzRSUwQSUzQy9odG1sJTNF"));
+                        // 驗證成功，徹底改寫頁面內容
+                        document.open();
+                        document.write(decoded);
+                        document.close();
+                    } else {
+                        msg.style.display = 'block';
+                        msg.innerText = "驗證失敗：密碼錯誤或權限不足";
+                        loading.style.display = 'none';
+                        btn.disabled = false;
+                    }
+                } catch(e) { 
+                    alert("連線失敗，請檢查網路");
+                    loading.style.display = 'none';
+                    btn.disabled = false;
                 }
-                html += '</div>';
             }
-        }
-        document.getElementById('card-container').innerHTML = html;
-    }
-</script>
-</body>
-</html>
+            
+            document.getElementById('pw').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') verify();
+            });
+        </script>
+    </body>
+    </html>
+    
