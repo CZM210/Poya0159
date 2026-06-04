@@ -18,7 +18,7 @@
     <div id="auth-overlay">
         <div class="card">
             <h2 style="margin:0 0 10px 0;">系統授權驗證</h2>
-            <p style="color:#aaa; font-size:14px; margin:0;">成功後 1 小時內免重複輸入<p>版本號202606_V.0527</p>
+            <p style="color:#aaa; font-size:14px; margin:0;">成功後 1 小時內免重複輸入<p>版本號202606_V.0603</p>
             <input type="password" id="pw" placeholder="輸入授權密碼" autofocus>
             <button id="btn" onclick="verify()">確認進入</button>
             <p id="msg">驗證失敗</p>
@@ -52,7 +52,7 @@
 
             try {
                 const gasUrl = "https://script.google.com/macros/s/AKfycbxbdT1FnxHPyDflQgHd2jkB_SBU2MJgCTQYkeGsfVi6CX7vLxqmttM1xFuszMAa0-MyjQ/exec";
-                // ?? 直接對 GAS 發送請求，不抓外部 IP 避免被擋
+                //  直接對 GAS 發送請求，不抓外部 IP 避免被擋
                 const res = await fetch(`${gasUrl}?password=${encodeURIComponent(input)}&device=${encodeURIComponent(navigator.userAgent)}`);
                 const result = await res.json();
 
