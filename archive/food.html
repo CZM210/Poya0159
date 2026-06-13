@@ -13,6 +13,17 @@
             align-items: center;
             padding: 20px;
             margin: 0;
+            /* 避免手機雙擊畫面時會放大縮小 */
+            touch-action: manipulation; 
+        }
+
+        /* 提示文字 */
+        .tips {
+            color: #fff;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            text-align: center;
         }
 
         /* 上方流派選擇按鈕區 */
@@ -35,21 +46,19 @@
             color: #333;
             cursor: pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: transform 0.1s;
+            transition: background 0.2s, transform 0.1s;
+            -webkit-tap-highlight-color: transparent; /* 移除手機點擊高亮藍框 */
         }
 
         .btn-genre:active {
             transform: scale(0.95);
         }
 
-        .btn-genre.selected-left {
-            background: #ff922b !important;
+        /* 被選中時的顏色（不分敵我，統一格式） */
+        .btn-genre.selected {
+            background: linear-gradient(135deg, #ff922b, #ff6b6b) !important;
             color: white;
-        }
-
-        .btn-genre.selected-right {
-            background: #5c7cfa !important;
-            color: white;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
         }
 
         /* 中間結果顯示區 */
@@ -105,37 +114,22 @@
         .btn-round.active {
             outline: 3px solid #000;
         }
-
-        /* 側邊選擇提示 */
-        .side-indicator {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            max-width: 400px;
-            margin-bottom: 10px;
-            font-weight: bold;
-            color: #fff;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-        }
     </style>
 </head>
 <body>
 
-    <div class="side-indicator">
-        <span>左鍵點擊：選擇我方</span>
-        <span>右鍵點擊：選擇敵方</span>
-    </div>
+    <div class="tips">任選兩個流派即可查看結果，點擊已選中的流派可取消</div>
 
     <div class="grid-container">
-        <button class="btn-genre" onclick="selectGenre('刀', 'left')" oncontextmenu="selectGenre('刀', 'right'); return false;">刀</button>
-        <button class="btn-genre" onclick="selectGenre('槍', 'left')" oncontextmenu="selectGenre('槍', 'right'); return false;">槍</button>
-        <button class="btn-genre" onclick="selectGenre('劍', 'left')" oncontextmenu="selectGenre('劍', 'right'); return false;">劍</button>
-        <button class="btn-genre" onclick="selectGenre('棍', 'left')" oncontextmenu="selectGenre('棍', 'right'); return false;">棍</button>
-        <button class="btn-genre" onclick="selectGenre('內門', 'left')" oncontextmenu="selectGenre('內門', 'right'); return false;">內門</button>
-        <button class="btn-genre" onclick="selectGenre('外門', 'left')" oncontextmenu="selectGenre('外門', 'right'); return false;">外門</button>
-        <button class="btn-genre" onclick="selectGenre('身法', 'left')" oncontextmenu="selectGenre('身法', 'right'); return false;">身法</button>
-        <button class="btn-genre" onclick="selectGenre('腿', 'left')" oncontextmenu="selectGenre('腿', 'right'); return false;">腿</button>
-        <button class="btn-genre" onclick="selectGenre('拳', 'left')" oncontextmenu="selectGenre('拳', 'right'); return false;">拳</button>
+        <button class="btn-genre" onclick="clickGenre('刀')">刀</button>
+        <button class="btn-genre" onclick="clickGenre('槍')">槍</button>
+        <button class="btn-genre" onclick="clickGenre('劍')">劍</button>
+        <button class="btn-genre" onclick="clickGenre('棍')">棍</button>
+        <button class="btn-genre" onclick="clickGenre('內門')">內門</button>
+        <button class="btn-genre" onclick="clickGenre('外門')">外門</button>
+        <button class="btn-genre" onclick="clickGenre('身法')">身法</button>
+        <button class="btn-genre" onclick="clickGenre('腿')">腿</button>
+        <button class="btn-genre" onclick="clickGenre('拳')">拳</button>
     </div>
 
     <div class="rounds-container">
@@ -148,22 +142,22 @@
 
     <div class="result-container">
         <div class="vs-title" id="vsTitle">請選擇流派與輪數</div>
-        <div class="strategy-text" id="strategyResult">尚未選擇完整資料</div>
+        <div class="strategy-text" id="strategyResult">請任意點選兩個流派</div>
     </div>
 
     <script>
-        let leftSelected = "";
-        let rightSelected = "";
+        // 用陣列來儲存被選中的流派，最多只能有兩個
+        let selectedGenres = []; 
         let currentRound = "1-3"; // 預設 1~3 輪
 
-        // 初始化輪數按鈕高亮
+        // 初始化輪數按鈕
         document.querySelectorAll('.btn-round')[0].classList.add('active');
 
-        // 資料庫：你可以在這裡補齊所有對決的文字內容！
+        // 資料庫：修改這裡的文字即可更新結果！
         const winRateData = {
             "1-3": {
                 "內門-槍": "內。槍招愈多，流血多，鐵腕",
-                "外門-腿": "外贏 [32] 25 vs 0 (這是範例資料)",
+                "外門-腿": "外贏 [32] 25 vs 0",
                 "身法-刀": "身法。開意高傷害刀，身法閃+血壓。"
             },
             "4-6": {
@@ -181,24 +175,33 @@
             }
         };
 
-        function selectGenre(genre, side) {
-            const buttons = document.querySelectorAll('.btn-genre');
-            
-            if (side === 'left') {
-                leftSelected = genre;
-                // 更新按鈕顏色
-                buttons.forEach(btn => {
-                    if(btn.innerText === genre) btn.classList.add('selected-left');
-                    else btn.classList.remove('selected-left');
-                });
+        function clickGenre(genre) {
+            const index = selectedGenres.indexOf(genre);
+
+            if (index > -1) {
+                // 1. 如果已經被選過了，再點一次就是「取消選擇」
+                selectedGenres.splice(index, 1);
             } else {
-                rightSelected = genre;
-                // 更新按鈕顏色
-                buttons.forEach(btn => {
-                    if(btn.innerText === genre) btn.classList.add('selected-right');
-                    else btn.classList.remove('selected-right');
-                });
+                // 2. 如果沒被選過，檢查是不是已經選滿兩個了
+                if (selectedGenres.length < 2) {
+                    selectedGenres.push(genre);
+                } else {
+                    // 如果已經選了兩個，再點第三個就自動「換掉第一個選的」
+                    selectedGenres.shift();
+                    selectedGenres.push(genre);
+                }
             }
+
+            // 更新所有按鈕的外觀樣式
+            const buttons = document.querySelectorAll('.btn-genre');
+            buttons.forEach(btn => {
+                if (selectedGenres.includes(btn.innerText)) {
+                    btn.classList.add('selected');
+                } else {
+                    btn.classList.remove('selected');
+                }
+            });
+
             updateResult();
         }
 
@@ -213,20 +216,25 @@
         }
 
         function updateResult() {
-            if (!leftSelected || !rightSelected) {
-                document.getElementById('vsTitle').innerText = `已選我方: ${leftSelected || '無'} | 敵方: ${rightSelected || '無'}`;
-                document.getElementById('strategyResult').innerText = "請選齊雙方流派";
+            if (selectedGenres.length < 2) {
+                let currentText = selectedGenres.length === 1 ? `已選：${selectedGenres[0]}` : "無";
+                document.getElementById('vsTitle').innerText = `已選擇流派 (${selectedGenres.length}/2)`;
+                document.getElementById('strategyResult').innerText = `請再選擇一個流派。當前${currentText}`;
                 return;
             }
 
-            document.getElementById('vsTitle').innerText = `${leftSelected} vs ${rightSelected} (${currentRound}輪)`;
+            // 抓出選中的兩個流派
+            const genreA = selectedGenres[0];
+            const genreB = selectedGenres[1];
 
-            // 組合 Key 值 (例如 "內門-槍")
-            const key = `${leftSelected}-${rightSelected}`;
-            const reverseKey = `${rightSelected}-${leftSelected}`; // 防呆：如果順序反過來也找找看
+            document.getElementById('vsTitle').innerText = `${genreA} 與 ${genreB} (${currentRound}輪)`;
+
+            // 雙向檢查（因為不分順序，A-B 或 B-A 都算同一組對決）
+            const key1 = `${genreA}-${genreB}`;
+            const key2 = `${genreB}-${genreA}`;
             
             const dataTable = winRateData[currentRound] || {};
-            const resultText = dataTable[key] || dataTable[reverseKey] || "暫無此對決資料，可在程式碼中自行添加！";
+            const resultText = dataTable[key1] || dataTable[key2] || "暫無此對決資料，可在程式碼中自行添加！";
 
             document.getElementById('strategyResult').innerText = resultText;
         }
