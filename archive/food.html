@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>流派對戰勝率計算機</title>
+    <title>江湖流派對戰勝率計算機</title>
     <style>
         body {
             background-color: #c9a0a0;
@@ -13,11 +13,9 @@
             align-items: center;
             padding: 20px;
             margin: 0;
-            /* 避免手機雙擊畫面時會放大縮小 */
             touch-action: manipulation; 
         }
 
-        /* 提示文字 */
         .tips {
             color: #fff;
             font-weight: bold;
@@ -26,7 +24,6 @@
             text-align: center;
         }
 
-        /* 上方流派選擇按鈕區 */
         .grid-container {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -47,21 +44,20 @@
             cursor: pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             transition: background 0.2s, transform 0.1s;
-            -webkit-tap-highlight-color: transparent; /* 移除手機點擊高亮藍框 */
+            -webkit-tap-highlight-color: transparent;
         }
 
         .btn-genre:active {
             transform: scale(0.95);
         }
 
-        /* 被選中時的顏色（不分敵我，統一格式） */
         .btn-genre.selected {
             background: linear-gradient(135deg, #ff922b, #ff6b6b) !important;
             color: white;
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
         }
 
-        /* 中間結果顯示區 */
+        /* 儀表板主容器 */
         .result-container {
             background-color: #d99830;
             color: #1a1a1a;
@@ -72,6 +68,7 @@
             text-align: center;
             box-shadow: 0 4px 8px rgba(0,0,0,0.15);
             margin-bottom: 20px;
+            box-sizing: border-box;
         }
 
         .vs-title {
@@ -86,10 +83,58 @@
             padding: 10px;
             border-radius: 5px;
             min-height: 40px;
-            word-break: break-all;
+            text-align: left;
+            line-height: 1.5;
+            margin-bottom: 15px;
         }
 
-        /* 下方輪數選擇區 */
+        /* 備註功能區樣式 */
+        .note-section {
+            background: rgba(0, 0, 0, 0.05);
+            padding: 12px;
+            border-radius: 6px;
+            text-align: left;
+            border-top: 1px dashed rgba(0,0,0,0.2);
+        }
+
+        .note-section label {
+            font-weight: bold;
+            font-size: 15px;
+            display: block;
+            margin-bottom: 5px;
+            color: #222;
+        }
+
+        .note-textarea {
+            width: 100%;
+            height: 60px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 6px;
+            font-size: 15px;
+            font-family: inherit;
+            resize: none;
+            box-sizing: border-box;
+            margin-bottom: 8px;
+        }
+
+        .btn-save-note {
+            background-color: #2b8a3e;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn-save-note:active {
+            background-color: #237032;
+        }
+
         .rounds-container {
             display: flex;
             gap: 10px;
@@ -118,60 +163,90 @@
 </head>
 <body>
 
-    <div class="tips">任選兩個流派即可查看結果，點擊已選中的流派可取消</div>
+    <div class="tips">手機點擊：任選兩個流派即可，再點一次可取消選取</div>
 
     <div class="grid-container">
-        <button class="btn-genre" onclick="clickGenre('刀')">刀</button>
-        <button class="btn-genre" onclick="clickGenre('槍')">槍</button>
-        <button class="btn-genre" onclick="clickGenre('劍')">劍</button>
-        <button class="btn-genre" onclick="clickGenre('棍')">棍</button>
         <button class="btn-genre" onclick="clickGenre('內門')">內門</button>
         <button class="btn-genre" onclick="clickGenre('外門')">外門</button>
         <button class="btn-genre" onclick="clickGenre('身法')">身法</button>
-        <button class="btn-genre" onclick="clickGenre('腿')">腿</button>
+        <button class="btn-genre" onclick="clickGenre('刀')">刀</button>
+        <button class="btn-genre" onclick="clickGenre('劍')">劍</button>
+        <button class="btn-genre" onclick="clickGenre('棍')">棍</button>
+        <button class="btn-genre" onclick="clickGenre('槍')">槍</button>
         <button class="btn-genre" onclick="clickGenre('拳')">拳</button>
     </div>
 
     <div class="rounds-container">
-        <button class="btn-round" style="background-color: #8ce99a;" onclick="selectRound('1-3')">1~3輪</button>
-        <button class="btn-round" style="background-color: #748ffc;" onclick="selectRound('4-6')">4~6輪</button>
-        <button class="btn-round" style="background-color: #ae3ec9; color: white;" onclick="selectRound('7-9')">7~9輪</button>
-        <button class="btn-round" style="background-color: #fcc419;" onclick="selectRound('10-12')">10~12輪</button>
-        <button class="btn-round" style="background-color: #ff6b6b;" onclick="selectRound('13-15')">13~15輪</button>
+        <button class="btn-round" style="background-color: #8ce99a;" onclick="selectRound('1-3')">1-3輪</button>
+        <button class="btn-round" style="background-color: #748ffc;" onclick="selectRound('4-6')">4-6輪</button>
+        <button class="btn-round" style="background-color: #ae3ec9; color: white;" onclick="selectRound('7-9')">7-9輪</button>
+        <button class="btn-round" style="background-color: #fcc419;" onclick="selectRound('10-12')">10-12輪</button>
+        <button class="btn-round" style="background-color: #ff6b6b;" onclick="selectRound('13-15')">13-15輪</button>
     </div>
 
     <div class="result-container">
         <div class="vs-title" id="vsTitle">請選擇流派與輪數</div>
         <div class="strategy-text" id="strategyResult">請任意點選兩個流派</div>
+        
+        <div class="note-section" id="noteSection" style="display: none;">
+            <label id="noteLabel">✏️ 我的私人備註：</label>
+            <textarea class="note-textarea" id="noteInput" placeholder="可以在這裡輸入你自己的心得或配置點此記錄..."></textarea>
+            <button class="btn-save-note" onclick="saveNote()">儲存備註</button>
+        </div>
     </div>
 
     <script>
-        // 用陣列來儲存被選中的流派，最多只能有兩個
         let selectedGenres = []; 
-        let currentRound = "1-3"; // 預設 1~3 輪
+        let currentRound = "1-3"; 
 
-        // 初始化輪數按鈕
         document.querySelectorAll('.btn-round')[0].classList.add('active');
 
-        // 資料庫：修改這裡的文字即可更新結果！
+        // 內建大圖數據
         const winRateData = {
             "1-3": {
-                "內門-槍": "內。槍招愈多，流血多，鐵腕",
-                "外門-腿": "外贏 [32] 25 vs 0",
-                "身法-刀": "身法。開意高傷害刀，身法閃+血壓。"
+                "拳-內門": "拳。內", "拳-外門": "拳。外", "拳-身法": "拳。身法", "拳-刀": "拳。刀", "拳-劍": "拳。劍", "拳-棍": "拳。棍", "拳-槍": "拳。槍", "拳-拳": "拳",
+                "槍-內門": "槍。槍招愈多，流血多，鐵腕", "槍-外門": "槍。五五開，槍擊流血婚契，外法找規律外", "槍-身法": "槍。五五開，槍擊流血椰子", "槍-刀": "槍。刀。槍擊疾風刺，催槍", "槍-劍": "槍。槍", "槍-棍": "槍。槍", "槍-槍": "槍",
+                "棍-內門": "棍。內", "棍-外門": "棍。外", "棍-身法": "棍。身法", "棍-刀": "棍。刀", "棍-棍": "棍",
+                "劍-內門": "劍。內", "劍-外門": "劍. 外", "劍-身法": "劍。身法。劍法出三劍，血壓命中，可以噬魂", "劍-刀": "劍。刀", "劍-劍": "劍",
+                "刀-內門": "刀。內", "刀-外門": "刀。外", "刀-身法": "刀。身法。開意高傷害刀，身法閃+血壓，刀反自願隨身戰", "刀-刀": "刀",
+                "身法-內門": "身法。內。身法注意扣步+防閃，極身戰", "身法-外門": "身法。外。外部對震外，外沒出防震，可用閃避反擊血壓", "身法-身法": "身法",
+                "外門-內門": "外門。內"
             },
             "4-6": {
-                "內門-槍": "內。槍疾風刺，爆槍",
-                "外門-腿": "腿贏 [範例] 腿攻勢強"
+                "拳-內門": "拳。內門", "拳-外門": "拳。外門", "拳-身法": "拳。身法", "拳-刀": "拳。刀。拳掌心蓄，贈拳", "拳-劍": "拳。劍", "拳-棍": "拳。棍。拳掌心蓄，贈拳", "拳-槍": "拳。槍。拳掌心蓄，贈拳", "拳-拳": "拳。拳。五五開，拳掌心蓄，贈拳",
+                "槍-內門": "槍。內。槍疾風刺，爆槍", "槍-外門": "槍。外。槍疾風刺，爆槍", "槍-身法": "槍。身法。槍疾風刺，爆槍", "槍-刀": "槍。刀", "槍-劍": "槍。劍。劍出神門，兩儀，眼劍", "槍-棍": "槍。棍。槍3下流血，爆槍", "槍-槍": "槍",
+                "棍-內門": "棍。內。索聚少陽，補槍", "棍-外門": "棍。外。催夾冷剛，補槍", "棍-身法": "棍。身法. 索聚少陽，補槍", "棍-刀": "棍。刀。刀。索聚少陽，補槍", "棍-劍": "棍。棍", "棍-棍": "棍",
+                "劍-內門": "劍。內。極太乙+玄黃，婚契", "劍-外門": "劍。外。極太乙+玄黃，婚契", "劍-身法": "劍。身法。極太乙出劍前，驅身法", "劍-刀": "劍。刀。刀。極太乙+玄黃，婚契", "劍-劍": "劍",
+                "刀-內門": "刀。內", "刀-外門": "刀。外", "刀-身法": "刀。身法", "刀-刀": "刀",
+                "身法-內門": "身法。內。身法大腦+大槍，隨身法", "身法-外門": "身法. 外。身法大腦+大槍，隨身法", "身法-身法": "身法",
+                "外門-內門": "外門。內。五五開，外掌心蓄，贈外"
             },
             "7-9": {
-                "內門-槍": "內。內不流血+陰液痛，賭槍"
+                "拳-內門": "拳。內門", "拳-外門": "拳。外門", "拳-身法": "拳。身法", "拳-刀": "拳。刀", "拳-劍": "拳。劍", "拳-棍": "拳。棍", "拳-槍": "拳。槍", "拳-拳": "拳",
+                "槍-內門": "槍。內。內不流血+陰液痛，賭槍", "槍-外門": "槍。外。外不流血+陰液痛，賭槍", "槍-身法": "槍。身法。身法不流血+陰液痛，賭槍", "槍-刀": "槍。刀。刀。陰液痛+嗜血，爆槍", "槍-劍": "槍。劍。劍圈大，陰液痛讓意更多，賭槍", "槍-棍": "槍。棍", "槍-槍": "槍",
+                "棍-內門": "棍。內。注索聚驅，補槍", "棍-外門": "棍。外。注索聚驅，補槍", "棍-身法": "棍", "棍-刀": "棍", "棍-棍": "棍",
+                "劍-內門": "劍。內。劍御天，婚契", "劍-外門": "劍。外", "劍-身法": "劍。身法", "劍-刀": "劍。刀。刀。劍御天，婚契", "劍-劍": "劍",
+                "刀-內門": "刀。內", "刀-外門": "刀。外", "刀-身法": "刀。身法", "刀-刀": "刀",
+                "身法-內門": "身法。內。五五開，身法隨風驅，隨身法", "身法-身法": "身法",
+                "外門-內門": "外門。內。外御天，意外內血眼多，隨內"
             },
             "10-12": {
-                "內門-槍": "內。暴擊+大障，婚契"
+                "拳-內門": "拳。內。脈琉璃+天陣，婚契", "拳-外門": "拳。外。脈琉璃+天陣，婚契", "拳-身法": "拳。身法。脈琉璃+天陣，婚契", "拳-刀": "拳。刀", "拳-劍": "拳。劍。脈琉璃+天陣，婚契", "拳-棍": "拳。棍", "拳-槍": "拳。槍。脈琉璃+天陣，婚契", "拳-拳": "拳。拳。脈琉璃+天陣，婚契",
+                "槍-內門": "槍。內", "槍-外門": "槍。外", "槍-身法": "槍。身法", "槍-刀": "槍。刀", "槍-劍": "槍。劍。拳控多，驅拳", "槍-棍": "槍。棍", "槍-槍": "槍。槍。拳控多，驅拳",
+                "棍-內門": "棍。內", "棍-外門": "棍。外。外走控，意外流出高技能，吸術", "棍-身法": "棍。身法。五五開，意元氣", "棍-刀": "棍。刀", "棍-槍": "棍。槍", "棍-棍": "棍",
+                "劍-內門": "劍", "劍-外門": "劍", "劍-身法": "劍", "劍-刀": "劍。刀。福仙降血感，婚契。刀偽無忌，只賭刀", "劍-棍": "劍",
+                "刀-內門": "刀. 內", "刀-外門": "刀。外", "刀-身法": "刀。身法", "刀-刀": "刀",
+                "身法-內門": "身法。內。刀。內控制多，嗜內", "身法-外門": "身法。外", "身法-身法": "身法",
+                "外門-內門": "外門。內。五五開，遺世界驅誰"
             },
             "13-15": {
-                "內門-槍": "內。暴擊+天陣，婚契"
+                "拳-內門": "拳。內。脈琉璃+天陣，婚契", "拳-外門": "拳。外", "拳-身法": "拳。身法。脈琉璃+天陣，婚契", "拳-刀": "拳. 刀", "拳-劍": "拳。劍。脈琉璃+天陣，婚契", "拳-棍": "拳。棍", "拳-槍": "拳。槍。脈琉璃+天陣，婚契", "拳-拳": "拳。拳。脈琉璃+天陣，婚契",
+                "槍-內門": "槍。內。拳控制更多，婚契", "槍-外門": "槍。外", "槍-身法": "槍。身法。身法。意控制更多，婚契", "槍-刀": "槍。刀", "槍-劍": "槍。劍。劍控扣，眼劍，拳控多，驅拳", "槍-棍": "槍。棍", "槍-槍": "槍。槍。拳控多，防拳。輪天機必意",
+                "棍-內門": "棍。內", "棍-外門": "棍。外", "棍-身法": "棍。身法", "棍-刀": "棍。刀", "棍-劍": "棍。劍。劍控扣，眼劍，純武學系使更高，賭槍", "棍-棍": "棍",
+                "劍-內門": "劍", "劍-外門": "劍。外。眼。外血量破千，眼外", "劍-身法": "劍", "劍-刀": "劍。刀。楓血血牛佛，眼楓。刀偽無忌，血反神，賭刀", "劍-棍": "劍",
+                "刀-內門": "刀。內", "刀-外門": "刀。外", "刀-身法": "刀。身法", "刀-刀": "刀",
+                "身法-內門": "身法。內", "身法-外門": "身法。外。刀血如舞，得神、壁刀、外血換演化、眼外", "身法-身法": "身法",
+                "外門-內門": "外門. 內。五五開，意元氣"
             }
         };
 
@@ -179,20 +254,16 @@
             const index = selectedGenres.indexOf(genre);
 
             if (index > -1) {
-                // 1. 如果已經被選過了，再點一次就是「取消選擇」
                 selectedGenres.splice(index, 1);
             } else {
-                // 2. 如果沒被選過，檢查是不是已經選滿兩個了
                 if (selectedGenres.length < 2) {
                     selectedGenres.push(genre);
                 } else {
-                    // 如果已經選了兩個，再點第三個就自動「換掉第一個選的」
                     selectedGenres.shift();
                     selectedGenres.push(genre);
                 }
             }
 
-            // 更新所有按鈕的外觀樣式
             const buttons = document.querySelectorAll('.btn-genre');
             buttons.forEach(btn => {
                 if (selectedGenres.includes(btn.innerText)) {
@@ -209,34 +280,60 @@
             currentRound = round;
             const buttons = document.querySelectorAll('.btn-round');
             buttons.forEach(btn => {
-                if(btn.innerText.includes(round)) btn.classList.add('active');
+                if(btn.innerText.startsWith(round)) btn.classList.add('active');
                 else btn.classList.remove('active');
             });
             updateResult();
         }
 
+        // 產生儲存資料用的唯一 Key 值 (例如: Note_1-3_刀_劍)
+        function getStorageKey() {
+            if (selectedGenres.length < 2) return "";
+            const sorted = [...selectedGenres].sort(); // 排序過，確保「刀-劍」跟「劍-刀」抓到同一個備註
+            return `Note_${currentRound}_${sorted[0]}_${sorted[1]}`;
+        }
+
         function updateResult() {
+            const noteSection = document.getElementById('noteSection');
+            
             if (selectedGenres.length < 2) {
                 let currentText = selectedGenres.length === 1 ? `已選：${selectedGenres[0]}` : "無";
                 document.getElementById('vsTitle').innerText = `已選擇流派 (${selectedGenres.length}/2)`;
-                document.getElementById('strategyResult').innerText = `請再選擇一個流派。當前${currentText}`;
+                document.getElementById('strategyResult').innerText = `請再點選一個流派。當前${currentText}`;
+                noteSection.style.display = "none"; // 沒選滿隱藏備註區
                 return;
             }
 
-            // 抓出選中的兩個流派
             const genreA = selectedGenres[0];
             const genreB = selectedGenres[1];
 
-            document.getElementById('vsTitle').innerText = `${genreA} 與 ${genreB} (${currentRound}輪)`;
+            document.getElementById('vsTitle').innerText = `${genreA} ⚔️ ${genreB} (${currentRound}輪)`;
 
-            // 雙向檢查（因為不分順序，A-B 或 B-A 都算同一組對決）
             const key1 = `${genreA}-${genreB}`;
             const key2 = `${genreB}-${genreA}`;
             
             const dataTable = winRateData[currentRound] || {};
-            const resultText = dataTable[key1] || dataTable[key2] || "暫無此對決資料，可在程式碼中自行添加！";
+            const resultText = dataTable[key1] || dataTable[key2] || "⚠️ 圖片中此格子為空白或無特殊對應策略。";
 
-            document.getElementById('strategyResult').innerText = resultText;
+            document.getElementById('strategyResult').innerHTML = resultText.replace(/，/g, '，<br>').replace(/、/g, '、<br>');
+
+            // --- 載入備註邏輯 ---
+            noteSection.style.display = "block"; // 顯示備註區
+            document.getElementById('noteLabel').innerText = `✏️ [${currentRound}輪 ${genreA}-${genreB}] 的備註：`;
+            
+            const storageKey = getStorageKey();
+            const savedNote = localStorage.getItem(storageKey) || "";
+            document.getElementById('noteInput').value = savedNote;
+        }
+
+        // 儲存備註到本地
+        function saveNote() {
+            const storageKey = getStorageKey();
+            if (!storageKey) return;
+            
+            const noteValue = document.getElementById('noteInput').value;
+            localStorage.setItem(storageKey, noteValue);
+            alert("備註已成功儲存！只要不清除瀏覽器快取，下次打開還會在喔！");
         }
     </script>
 </body>
