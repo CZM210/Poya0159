@@ -120,17 +120,18 @@
         .btn-score {
             flex: 1;
             border: none;
-            padding: 8px;
+            padding: 10px 5px;
             border-radius: 4px;
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
             color: white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            word-break: break-all;
         }
 
-        .btn-win { background-color: #e03131; } /* 紅色勝 */
-        .btn-lose { background-color: #1971c2; } /* 藍色負 */
+        .btn-left-win { background-color: #ff922b; } /* 橘色按鈕 */
+        .btn-right-win { background-color: #5c7cfa; } /* 藍色按鈕 */
         
         .btn-reset-score {
             background: none;
@@ -244,11 +245,11 @@
         <div class="strategy-text" id="strategyResult">請任意點選兩個流派</div>
         
         <div class="score-section" id="scoreSection" style="display: none;">
-            <div class="score-title" id="scoreTitle">歷史戰績記錄</div>
-            <div class="score-board" id="scoreDisplay">0 勝 / 0 負 (勝率: 0%)</div>
+            <div class="score-title" id="scoreTitle">實戰對決勝率統計</div>
+            <div class="score-board" id="scoreDisplay">0 勝 / 0 勝 (勝率: 0%)</div>
             <div class="score-buttons">
-                <button class="btn-score btn-win" onclick="addRecord('win')">👍 記一勝</button>
-                <button class="btn-score btn-lose" onclick="addRecord('lose')">👎 記一負</button>
+                <button class="btn-score btn-left-win" id="btnLeftWin" onclick="addWin('left')">【A】贏了</button>
+                <button class="btn-score btn-right-win" id="btnRightWin" onclick="addWin('right')">【B】贏了</button>
             </div>
             <button class="btn-reset-score" onclick="resetRecord()">重設此對局戰績</button>
         </div>
@@ -266,6 +267,7 @@
 
         document.querySelectorAll('.btn-round')[0].classList.add('active');
 
+        // 資料庫
         const winRateData = {
             "1-3": {
                 "內門-內門": "內門", "內門-外門": "內門", "內門-身法": "內門", "內門-刀": "內門", "內門-劍": "內門", "內門-棍": "內門", "內門-槍": "內門。槍招愈多，流血多，鐵腕", "內門-拳": "內門", "內門-腿": "內門",
@@ -281,7 +283,7 @@
             "4-6": {
                 "內門-內門": "內門", "內門-外門": "內門", "內門-身法": "內門。身法大腦+大槍，隨身法", "內門-刀": "內門", "內門-劍": "內門。極太乙+玄黃，婚契", "內門-棍": "內門。索聚少陽，補槍", "內門-槍": "內門。槍疾風刺，爆槍", "內門-拳": "內門", "內門-腿": "內門。身法。內強",
                 "外門-外門": "外門", "外門-身法": "外門。身法大腦+大槍，隨身法", "外門-刀": "外門", "外門-劍": "外門。極太乙+玄黃，婚契", "外門-棍": "外門。催夾冷剛，補槍", "外門-槍": "外門。槍疾風刺，爆槍", "外門-拳": "外門。五五開，外掌心蓄，贈外", "外門-腿": "外門互攻，腿攻勢較強",
-                "身法-身法": "身法", "身法-刀": "身法", "身法-劍": "身法。極太乙出劍前，驅身法", "身法-棍": "身法. 索聚少陽，補槍", "身法-槍": "身法。槍疾風刺，爆槍", "身法-拳": "身法", "身法-腿": "身法",
+                "身法-身法": "身法", "身法-刀": "身法", "身法-劍": "身法。極太乙出劍前，驅身法", "身法-棍": "身法。索聚少陽，補槍", "身法-槍": "身法。槍疾風刺，爆槍", "身法-拳": "身法", "身法-腿": "身法",
                 "刀-刀": "刀", "刀-劍": "刀。極太乙+玄黃，婚契", "刀-棍": "刀。索聚少陽，補槍", "刀-槍": "刀", "刀-拳": "刀。拳掌心蓄，贈拳", "刀-腿": "刀",
                 "劍-劍": "劍", "劍-棍": "劍", "劍-槍": "劍。劍出神門，兩儀，眼劍", "劍-拳": "劍", "劍-腿": "劍",
                 "棍-棍": "棍", "棍-槍": "棍。槍3下流血，爆槍", "棍-拳": "棍。拳掌心蓄，贈拳", "棍-腿": "棍",
@@ -305,18 +307,18 @@
                 "外門-外門": "外門", "外門-身法": "外門", "外門-刀": "外門", "外門-劍": "外門", "外門-棍": "外門。外走控，意外流出高技能，吸術", "外門-槍": "外門", "外門-拳": "外門。脈琉璃+天陣，婚契", "外門-腿": "外門",
                 "身法-身法": "身法", "身法-刀": "身法", "身法-劍": "身法", "身法-棍": "身法。五五開，意元氣", "身法-槍": "身法", "身法-拳": "身法。脈琉璃+天陣，婚契", "身法-腿": "身法",
                 "刀-刀": "刀", "刀-劍": "刀。福仙降血感，婚契。刀偽無忌，只賭刀", "刀-棍": "刀", "刀-槍": "刀", "刀-拳": "刀", "刀-腿": "刀",
-                "劍-劍": "劍", "劍-棍": "劍", "劍-槍": "劍。拳控多，驅拳", "劍-拳": "劍。脈琉璃+天陣，婚契", "劍-腿": "劍",
+                "劍-劍": "劍", "劍-棍": "劍", "劍-槍": "劍。拳控多，驅拳", "劍-拳": "劍. 脈琉璃+天陣，婚契", "劍-腿": "劍",
                 "棍-棍": "棍", "棍-槍": "棍", "棍-拳": "棍", "棍-腿": "棍",
-                "槍-槍": "槍。拳控多，驅拳", "槍-拳": "槍。脈琉璃+天陣，婚契", "槍-腿": "槍",
-                "拳-拳": "拳. 脈琉璃+天陣，婚契", "拳-腿": "拳",
+                "槍-槍": "槍。拳控多 Gord，驅拳", "槍-拳": "槍。脈琉璃+天陣，婚契", "槍-腿": "槍",
+                "拳-拳": "拳。脈琉璃+天陣，婚契", "拳-腿": "拳",
                 "腿-腿": "腿"
             },
             "13-15": {
                 "內門-內門": "內門", "內門-外門": "內門外", "內門-身法": "內門。五五開，意氣元氣", "內門-刀": "內門", "內門-劍": "內門", "內門-棍": "內門", "內門-槍": "內門。拳控制更多，婚契", "內門-拳": "內門。脈琉璃+天陣，婚契", "內門-腿": "內門",
                 "外門-外門": "外門", "外門-身法": "外門。刀血如舞，得神、壁刀、外血換演化、眼外", "外門-刀": "外門。刀血如舞，得神、壁刀、外血換演化、眼外", "外門-劍": "外門。眼。外血量破千，眼外", "外門-棍": "外門", "外門-槍": "外門", "外門-拳": "外門", "外門-腿": "外門",
-                "身法-身法": "身法", "身法-刀": "身法", "身法-劍": "身法", "身法-棍": "身法", "身法-槍": "身法。意控制更多，婚契", "身法-拳": "身法. 脈琉璃+天陣，婚契", "身法-腿": "身法",
+                "身法-身法": "身法", "身法-刀": "身法", "身法-劍": "身法", "身法-棍": "身法", "身法-槍": "身法。意控制更多，婚契", "身法-拳": "身法。脈琉璃+天陣，婚契", "身法-腿": "身法",
                 "刀-刀": "刀", "刀-劍": "刀。楓血血牛佛，眼楓。刀偽無忌，血反神，賭刀", "刀-棍": "刀。楓血血牛佛，眼楓。刀偽無忌，血反神，賭刀", "刀-槍": "刀", "刀-拳": "刀", "刀-腿": "刀",
-                "劍-劍": "劍", "劍-棍": "劍", "劍-槍": "劍。劍控扣，眼劍，拳控多，驅拳", "劍-拳": "劍. 脈琉璃+天陣，婚契", "劍-腿": "劍",
+                "劍-劍": "劍", "劍-棍": "劍", "劍-槍": "劍。劍控扣，眼劍，拳控多，驅拳", "劍-拳": "劍。脈琉璃+天陣，婚契", "劍-腿": "劍",
                 "棍-棍": "棍", "棍-槍": "棍。劍控扣，眼劍，純武學系使更高，賭槍", "棍-拳": "棍", "棍-腿": "棍",
                 "槍-槍": "槍。拳控多，防拳。輪天機必意", "槍-拳": "槍。脈琉璃+天陣，婚契", "槍-腿": "槍",
                 "拳-拳": "拳。脈琉璃+天陣，婚契", "拳-腿": "拳",
@@ -360,11 +362,13 @@
             updateResult();
         }
 
-        // 取得唯一的儲存 Key（排序流派名稱確保雙向互通）
-        function getStorageKey(type) {
+        // 基於流派名稱取得對應的 LocalStorage 儲存 Key
+        function getWinKey(genreName) {
             if (selectedGenres.length < 2) return "";
-            const sorted = [...selectedGenres].sort(); 
-            return `${type}_${currentRound}_${sorted[0]}_${sorted[1]}`;
+            const otherGenre = selectedGenres[0] === genreName ? selectedGenres[1] : selectedGenres[0];
+            // 排序組合名，確保 A vs B 和 B vs A 共享同一個計數槽，但用贏家作為後綴
+            const combo = [genreName, otherGenre].sort().join("_");
+            return `WinCount_${currentRound}_${combo}_Winner_${genreName}`;
         }
 
         function updateResult() {
@@ -395,38 +399,49 @@
 
             // --- 載入戰績邏輯 ---
             scoreSection.style.display = "block";
-            document.getElementById('scoreTitle').innerText = `📊 [${currentRound}輪 ${genreA} vs ${genreB}] 實戰戰績累積：`;
+            document.getElementById('scoreTitle').innerText = `📊 [${currentRound}輪] 實戰勝負統計：`;
+            
+            // 動態修改按鈕名稱為當前選中的流派
+            document.getElementById('btnLeftWin').innerText = `👑 【${genreA}】贏了`;
+            document.getElementById('btnRightWin').innerText = `👑 【${genreB}】贏了`;
+            
             updateScoreDisplay();
 
             // --- 載入備註邏輯 ---
             noteSection.style.display = "block"; 
             document.getElementById('noteLabel').innerText = `✏️ [${currentRound}輪 ${genreA}-${genreB}] 的備註：`;
             
-            const noteKey = getStorageKey('Note');
+            // 備註的 key 也做排序處理
+            const sortedGenres = [...selectedGenres].sort();
+            const noteKey = `Note_${currentRound}_${sortedGenres[0]}_${sortedGenres[1]}`;
             const savedNote = localStorage.getItem(noteKey) || "";
             document.getElementById('noteInput').value = savedNote;
         }
 
-        // 刷新戰績畫面
+        // 刷新勝負看板
         function updateScoreDisplay() {
-            const winKey = getStorageKey('Win');
-            const loseKey = getStorageKey('Lose');
+            const genreA = selectedGenres[0];
+            const genreB = selectedGenres[1];
             
-            const wins = parseInt(localStorage.getItem(winKey)) || 0;
-            const loses = parseInt(localStorage.getItem(loseKey)) || 0;
-            const total = wins + loses;
+            const keyA = getWinKey(genreA);
+            const keyB = getWinKey(genreB);
             
-            let winRate = 0;
+            const winA = parseInt(localStorage.getItem(keyA)) || 0;
+            const winB = parseInt(localStorage.getItem(keyB)) || 0;
+            const total = winA + winB;
+            
+            let rateA = 0;
             if (total > 0) {
-                winRate = Math.round((wins / total) * 100);
+                rateA = Math.round((winA / total) * 100);
             }
             
-            document.getElementById('scoreDisplay').innerText = `${wins} 勝 / ${loses} 負 (實際勝率: ${winRate}%)`;
+            document.getElementById('scoreDisplay').innerText = `【${genreA}】 ${winA} 勝  vs  【${genreB}】 ${winB} 勝  ( ${genreA} 勝率: ${rateA}% )`;
         }
 
-        // 新增勝負次數
-        function addRecord(type) {
-            const key = getStorageKey(type === 'win' ? 'Win' : 'Lose');
+        // 按下某一邊贏了
+        function addWin(side) {
+            const genreName = side === 'left' ? selectedGenres[0] : selectedGenres[1];
+            const key = getWinKey(genreName);
             if (!key) return;
             
             let currentCount = parseInt(localStorage.getItem(key)) || 0;
@@ -437,19 +452,18 @@
 
         // 重設該對局戰績
         function resetRecord() {
-            if (confirm("確定要將這個組合在目前輪次的戰績歸零嗎？")) {
-                const winKey = getStorageKey('Win');
-                const loseKey = getStorageKey('Lose');
-                localStorage.setItem(winKey, 0);
-                localStorage.setItem(loseKey, 0);
+            const genreA = selectedGenres[0];
+            const genreB = selectedGenres[1];
+            if (confirm(`確定要將 [${genreA} vs ${genreB}] 的勝場紀錄全部歸零嗎？`)) {
+                localStorage.setItem(getWinKey(genreA), 0);
+                localStorage.setItem(getWinKey(genreB), 0);
                 updateScoreDisplay();
             }
         }
 
         function saveNote() {
-            const noteKey = getStorageKey('Note');
-            if (!noteKey) return;
-            
+            const sortedGenres = [...selectedGenres].sort();
+            const noteKey = `Note_${currentRound}_${sortedGenres[0]}_${sortedGenres[1]}`;
             const noteValue = document.getElementById('noteInput').value;
             localStorage.setItem(noteKey, noteValue);
             alert("備註已成功儲存！");
