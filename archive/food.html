@@ -3,121 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>江湖流派對戰勝率計算機 - 智慧完全體</title>
+    <title>流派對戰預測選擇器 - 智慧完全體</title>
     <style>
+        :root {
+            --bg-color: #dcb3a6; /* 仿原圖粉膚色背景 */
+            --card-bg: #cca444; /* 下方結果區黃色背景 */
+            --result-content-bg: #e6ce8a; /* 結果文字框內襯色 */
+        }
+        
         body {
-            background-color: #c9a0a0;
-            font-family: "Microsoft JhengHei", sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 15px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 20px;
-            margin: 0;
+            color: #333;
             touch-action: manipulation; 
         }
 
-        .tips {
-            color: #fff;
-            font-weight: bold;
-            margin-bottom: 15px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        .title {
             text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            margin-bottom: 15px;
         }
 
+        /* 九宮格流派按鈕 */
         .grid-container {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            max-width: 500px;
+            gap: 12px;
             width: 100%;
-            margin-bottom: 20px;
-        }
-
-        .btn-genre {
-            background: linear-gradient(135deg, #a5d8ff, #eebefa);
-            border: none;
-            border-radius: 5px;
-            padding: 15px;
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: background 0.2s, transform 0.1s;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .btn-genre:active {
-            transform: scale(0.95);
-        }
-
-        .btn-genre.selected {
-            background: linear-gradient(135deg, #ff922b, #ff6b6b) !important;
-            color: white;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .result-container {
-            background-color: #d99830;
-            color: #1a1a1a;
-            padding: 20px;
-            border-radius: 8px;
-            width: 100%;
-            max-width: 460px;
-            text-align: center;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-            margin-bottom: 20px;
-            box-sizing: border-box;
-        }
-
-        .vs-title {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
-
-        .strategy-text {
-            font-size: 18px;
-            background: rgba(255,255,255,0.3);
-            padding: 10px;
-            border-radius: 5px;
-            min-height: 40px;
-            text-align: left;
-            line-height: 1.5;
+            max-width: 400px;
             margin-bottom: 15px;
         }
 
+        .btn {
+            padding: 15px 0;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.2s ease;
+            text-align: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-style { background: linear-gradient(to bottom, #d2e1ff, #bccdff); color: #333; }
+        
+        .btn.active {
+            background: linear-gradient(to bottom, #ff9e66, #ff6d33) !important;
+            color: white;
+            transform: scale(0.95);
+        }
+
+        /* 輪數切換按鈕 */
+        .round-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 400px;
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .round-btn {
+            flex: 1;
+            padding: 12px 0;
+            font-size: 13px;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            color: #333;
+        }
+
+        .r1 { background-color: #98eb98; }
+        .r2 { background-color: #6c91f0; color: white; }
+        .r3 { background-color: #9a49cf; color: white; }
+        .r4 { background-color: #f7d154; }
+        .r5 { background-color: #e66767; color: white; }
+
+        .round-btn.active {
+            outline: 3px solid #000;
+            outline-offset: -2px;
+        }
+
+        /* 下方預測結果與功能綜合區塊 */
+        .result-card {
+            width: 100%;
+            max-width: 400px;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 15px;
+            box-sizing: border-box;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            display: none; 
+        }
+
+        .result-header {
+            font-size: 22px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 12px;
+            color: #111;
+        }
+
+        .result-body {
+            background-color: var(--result-content-bg);
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 16px;
+            line-height: 1.5;
+            white-space: pre-wrap; 
+            color: #222;
+            font-weight: 500;
+            margin-bottom: 15px;
+        }
+
+        /* 戰績計次功能區樣式 */
         .score-section {
             background: rgba(255, 255, 255, 0.65);
             padding: 12px;
-            border-radius: 6px;
+            border-radius: 8px;
             margin-bottom: 15px;
             text-align: center;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
         .score-title {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             color: #222;
         }
 
         .score-board {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             color: #c92a2a;
             margin-bottom: 5px;
-            letter-spacing: 0.5px;
         }
 
         .high-rate-tip {
-            font-size: 15px;
+            font-size: 14px;
             color: #2b8a3e;
             font-weight: bold;
             margin-bottom: 10px;
-            background: rgba(43, 138, 62, 0.1);
-            padding: 4px;
+            background: rgba(43, 138, 62, 0.15);
+            padding: 4px 8px;
             border-radius: 4px;
             display: inline-block;
         }
@@ -131,8 +172,8 @@
             flex: 1;
             border: none;
             padding: 10px 5px;
-            border-radius: 4px;
-            font-size: 16px;
+            border-radius: 6px;
+            font-size: 15px;
             font-weight: bold;
             cursor: pointer;
             color: white;
@@ -141,115 +182,92 @@
 
         .btn-left-win { background-color: #ff922b; } 
         .btn-right-win { background-color: #5c7cfa; } 
-        
+
         .btn-reset-score {
             background: none;
             border: none;
-            color: #666;
+            color: #555;
             text-decoration: underline;
             font-size: 12px;
             margin-top: 8px;
             cursor: pointer;
         }
 
+        /* 備註功能區樣式 */
         .note-section {
             background: rgba(0, 0, 0, 0.05);
             padding: 12px;
-            border-radius: 6px;
+            border-radius: 8px;
             text-align: left;
-            border-top: 1px dashed rgba(0,0,0,0.2);
+            border-top: 1px dashed rgba(0,0,0,0.15);
         }
 
         .note-section label {
             font-weight: bold;
-            font-size: 15px;
+            font-size: 14px;
             display: block;
             margin-bottom: 5px;
-            color: #222;
+            color: #111;
         }
 
         .note-textarea {
             width: 100%;
             height: 60px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            border: 1px solid #b59334;
+            border-radius: 5px;
             padding: 6px;
             font-size: 15px;
             font-family: inherit;
             resize: none;
             box-sizing: border-box;
             margin-bottom: 8px;
+            background-color: rgba(255,255,255,0.5);
         }
 
         .btn-save-note {
             background-color: #2b8a3e;
             color: white;
             border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
+            padding: 8px 12px;
+            border-radius: 5px;
             font-size: 14px;
             font-weight: bold;
             cursor: pointer;
             width: 100%;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-
-        .rounds-container {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            width: 100%;
-            max-width: 500px;
-            margin-bottom: 30px;
-        }
-
-        .btn-round {
-            border: none;
-            border-radius: 5px;
-            padding: 12px 8px;
-            font-size: 15px;
-            font-weight: bold;
-            color: #333;
-            cursor: pointer;
-            flex: 1;
-            box-shadow: 0 3px 5px rgba(0,0,0,0.1);
-        }
-
-        .btn-round.active {
-            outline: 3px solid #000;
-        }
     </style>
 </head>
 <body>
 
-    <div class="tips">手機點擊：任選兩個流派即可，再點一次可取消選取</div>
+    <div class="title">手機點擊：任選兩個流派即可，再點一次可取消選取</div>
 
-    <div class="grid-container">
-        <button class="btn-genre" onclick="clickGenre('內門')">內門</button>
-        <button class="btn-genre" onclick="clickGenre('外門')">外門</button>
-        <button class="btn-genre" onclick="clickGenre('身法')">身法</button>
-        <button class="btn-genre" onclick="clickGenre('刀')">刀</button>
-        <button class="btn-genre" onclick="clickGenre('劍')">劍</button>
-        <button class="btn-genre" onclick="clickGenre('棍')">棍</button>
-        <button class="btn-genre" onclick="clickGenre('槍')">槍</button>
-        <button class="btn-genre" onclick="clickGenre('拳')">拳</button>
-        <button class="btn-genre" onclick="clickGenre('腿')">腿</button>
+    <div class="grid-container" id="schoolGrid">
+        <button class="btn btn-style" data-name="內門">內門</button>
+        <button class="btn btn-style" data-name="外門">外門</button>
+        <button class="btn btn-style" data-name="身法">身法</button>
+        <button class="btn btn-style" data-name="刀">刀</button>
+        <button class="btn btn-style" data-name="劍">劍</button>
+        <button class="btn btn-style" data-name="棍">棍</button>
+        <button class="btn-genre btn btn-style" data-name="槍">槍</button>
+        <button class="btn btn-style" data-name="拳">拳</button>
+        <button class="btn btn-style" data-name="腿">腿</button>
     </div>
 
-    <div class="rounds-container">
-        <button class="btn-round" style="background-color: #8ce99a;" onclick="selectRound('1-3')">1-3輪</button>
-        <button class="btn-round" style="background-color: #748ffc;" onclick="selectRound('4-6')">4-6輪</button>
-        <button class="btn-round" style="background-color: #ae3ec9; color: white;" onclick="selectRound('7-9')">7-9輪</button>
-        <button class="btn-round" style="background-color: #fcc419;" onclick="selectRound('10-12')">10-12輪</button>
-        <button class="btn-round" style="background-color: #ff6b6b;" onclick="selectRound('13-15')">13-15輪</button>
+    <div class="round-container">
+        <button class="round-btn r1 active" data-round="1-3">1-3輪</button>
+        <button class="round-btn r2" data-round="4-6">4-6輪</button>
+        <button class="round-btn r3" data-round="7-9">7-9輪</button>
+        <button class="round-btn r4" data-round="10-12">10-12輪</button>
+        <button class="round-btn r5" data-round="13-15">13-15輪</button>
     </div>
 
-    <div class="result-container">
-        <div class="vs-title" id="vsTitle">請選擇流派與輪數</div>
-        <div class="strategy-text" id="strategyResult">請任意點選兩個流派</div>
+    <div class="result-card" id="resultCard">
+        <div class="result-header" id="resultTitle">暫無資料</div>
+        <div class="result-body" id="resultContent">暫無資料</div>
         
-        <div class="score-section" id="scoreSection" style="display: none;">
-            <div class="score-title" id="scoreTitle">實戰對決勝率統計</div>
+        <div class="score-section">
+            <div class="score-title">📊 實戰勝負計數與隱性排列：</div>
             <div class="score-board" id="scoreDisplay">載入中...</div>
             <div id="highRateTip" class="high-rate-tip" style="display: none;"></div>
             <div class="score-buttons">
@@ -258,169 +276,163 @@
             </div>
             <button class="btn-reset-score" onclick="resetRecord()">重設此對局戰績</button>
         </div>
-        
-        <div class="note-section" id="noteSection" style="display: none;">
-            <label id="noteLabel">✏️ 我的私人備註：</label>
+
+        <div class="note-section">
+            <label id="noteLabel">✏️ 個人配置備註：</label>
             <textarea class="note-textarea" id="noteInput" placeholder="可以在這裡輸入你自己的心得或配置點此記錄..."></textarea>
             <button class="btn-save-note" onclick="saveNote()">儲存備註</button>
         </div>
     </div>
 
     <script>
-        let selectedGenres = []; 
-        let currentRound = "1-3"; 
-
-        document.querySelectorAll('.btn-round')[0].classList.add('active');
-
-        // 2026 最新官方 txt 完美對照數據庫
-        const winRateData = {
+        // 🌟 正確無誤的官方 123.xlsx 原始數據庫
+        const db = {
             "1-3": {
-                "內門-內門": "內門", "內門-外門": "內門", "內門-身法": "內門", "內門-刀": "內門", "內門-劍": "內門", "內門-棍": "內門", "內門-槍": "內門。槍招愈多，流血多，鐵腕", "內門-拳": "內門", "內門-腿": "內門",
-                "外門-外門": "外門", "外門-身法": "外門", "外門-刀": "外門", "外門-劍": "外門", "外門-棍": "外門", "外門-槍": "外門。五五開，槍擊流血婚契，外法找規律外", "外門-拳": "外門", "外門-腿": "外門分流贏 [32] 25 vs 0",
-                "身法-身法": "身法", "身法-刀": "身法。開意高傷害刀，身法閃+血壓，刀反自願隨身戰", "身法-劍": "身法。劍法出三劍，血壓命中，可以噬魂", "身法-棍": "身法", "身法-槍": "身法。五五開，槍擊流血椰子", "身法-拳": "身法", "身法-腿": "身法",
-                "刀-刀": "刀", "刀-劍": "刀", "刀-棍": "刀", "刀-槍": "刀。槍擊疾風刺，催槍", "刀-拳": "刀", "刀-腿": "刀",
-                "劍-劍": "劍", "劍-棍": "劍", "劍-槍": "劍", "劍-拳": "劍", "劍-腿": "劍",
-                "棍-棍": "棍", "棍-槍": "棍", "棍-拳": "棍", "棍-腿": "棍",
-                "槍-槍": "槍", "槍-拳": "槍", "槍-腿": "槍",
-                "拳-拳": "拳", "拳-腿": "拳", "腿-腿": "腿"
+                "腿": {"內門":"內", "外門":"外", "身法":"身法", "刀":"刀", "劍":"劍", "棍":"棍", "槍":"槍", "拳":"拳"},
+                "拳": {"內門":"內", "外門":"外", "身法":"身法", "刀":"刀", "劍":"劍", "棍":"棍", "槍":"槍"},
+                "槍": {"內門":"內。\n槍：出招多且流血多，選槍", "外門":"一半機率。看出招\n槍：出流血。外：出技能", "身法":"一半機率。\n槍：出流血選槍", "刀":"刀。\n槍出擊風刺，選槍", "劍":"槍", "棍":"槍"},
+                "棍": {"內門":"內", "外門":"外", "身法":"棍", "刀":"刀", "劍":"棍"},
+                "劍": {"內門":"內", "外門":"外", "身法":"身法。\n劍蓮出三招＋全部命中，可以選劍", "刀":"刀"},
+                "刀": {"內門":"內", "外門":"外", "身法":"刀出招高選刀。\n身法閃＋出招且刀沒出招賭身法"},
+                "身法": {"內門":"內。\n身法出招多且出閃，選身法", "外門":"外：出招選外。\n身法：外沒出招＋身法２閃選身法"},
+                "外門": {"內門":"內"}
             },
             "4-6": {
-                "內門-內門": "內門", "內門-外門": "內門", "內門-身法": "內門。身法大腦+大槍，隨身法", "內門-刀": "內門", "內門-劍": "內門。極太乙+玄黃，婚契", "內門-棍": "內門。索聚少陽，補槍", "內門-槍": "內門。槍疾風刺，爆槍", "內門-拳": "內門", "內門-腿": "內門。身法。內強",
-                "外門-外門": "外門", "外門-身法": "外門。身法大腦+大槍，隨身法", "外門-刀": "外門", "外門-劍": "外門. 極太乙+玄黃，婚契", "外門-棍": "外門。催夾冷剛，補槍", "外門-槍": "外門。槍疾風刺，爆槍", "外門-拳": "外門。五五開，外掌心蓄，贈外", "外門-腿": "外門互攻，腿攻勢較強",
-                "身法-身法": "身法", "身法-刀": "身法", "身法-劍": "身法。極太乙出劍前，驅身法", "身法-棍": "身法。索聚少陽，補槍", "身法-槍": "身法。槍疾風刺，爆槍", "身法-拳": "身法", "身法-腿": "身法",
-                "刀-刀": "刀", "刀-劍": "刀。極太乙+玄黃，婚契", "刀-棍": "刀。索聚少陽，補槍", "刀-槍": "刀", "刀-拳": "刀。拳掌心蓄，贈拳", "刀-腿": "刀",
-                "劍-劍": "劍", "劍-棍": "劍", "劍-槍": "劍。劍出神門，兩儀，眼劍", "劍-拳": "劍", "劍-腿": "劍",
-                "棍-棍": "棍", "棍-槍": "棍。槍3下流血，爆槍", "棍-拳": "棍。拳掌心蓄，贈拳", "棍-腿": "棍",
-                "槍-槍": "槍", "槍-拳": "槍。拳掌心蓄，贈拳", "槍-腿": "槍",
-                "拳-拳": "拳。五五開，拳掌心蓄，贈拳", "拳-腿": "拳", "腿-腿": "腿"
+                "腿": {"內門":"內", "外門":"外", "身法":"身法", "刀":"刀", "劍":"劍", "棍":"棍", "槍":"槍", "拳":"拳"},
+                "拳": {"內門":"內。\n拳出掌心雷 選拳", "外門":"外", "身法":"身法", "刀":"刀。\n拳出掌心雷 選拳", "劍":"劍", "棍":"棍。\n拳出掌心雷 選拳", "槍":"槍。\n拳出掌心雷 選拳"},
+                "槍": {"內門":"內。\n槍出疾風刺賭槍。", "外門":"外。\n槍出疾風刺賭槍。", "身法":"身法。\n槍出疾風刺賭槍。", "刀":"刀", "劍":"槍。\n劍出神門+兩儀，賭劍", "棍":"棍。\n槍3下流血賭槍"},
+                "棍": {"內門":"內。\n棍 太乙+玄黃 賭棍", "外門":"外。\n棍 太乙+玄黃 賭棍", "身法":"棍。\n身法3次閃賭身法", "刀":"刀。\n棍 太乙+玄黃 賭棍", "劍":"棍"},
+                "劍": {"內門":"內", "外門":"外", "身法":"身法", "刀":"刀"},
+                "刀": {"內門":"內", "外門":"外", "身法":"身法"},
+                "身法": {"內門":"內。\n身法大鵬+火焰賭身法。", "外門":"外。\n身法大鵬+火焰賭身法。"},
+                "外門": {"內門":"一半機率。\n外出掌心雷，賭外。"}
             },
             "7-9": {
-                "內門-內門": "內門", "內門-外門": "內門。外御天，意外內血眼多，隨內", "內門-身法": "內門。五五開，身法隨風驅，隨身法", "內門-刀": "內門", "內門-劍": "內門。劍御天，婚契", "內門-棍": "內門。注索聚驅，補槍", "內門-槍": "內門。內不流血+陰液痛，賭槍", "內門-拳": "內門", "內門-腿": "內門",
-                "外門-外門": "外門", "外門-身法": "外門", "外門-刀": "外門", "外門-劍": "外門", "外門-棍": "外門。注索聚驅，補槍", "外門-槍": "外門。外不流血+陰液痛，賭槍", "外門-拳": "外門", "外門-腿": "外門",
-                "身法-身法": "身法", "身法-刀": "身法", "身法-劍": "身法", "身法-棍": "身法", "身法-槍": "身法。身法不流血+陰液痛，賭槍", "身法-拳": "身法", "身法-腿": "身法",
-                "刀-刀": "刀", "刀-劍": "刀。劍御天，婚契", "刀-棍": "刀", "刀-槍": "刀。陰液痛+嗜血，爆槍", "刀-拳": "刀", "刀-腿": "刀",
-                "劍-劍": "劍", "劍-棍": "劍", "劍-槍": "劍。劍圈大，陰液痛讓意更多，賭槍", "劍-拳": "劍", "劍-腿": "劍",
-                "棍-棍": "棍", "棍-槍": "棍", "棍-拳": "棍", "棍-腿": "棍",
-                "槍-槍": "槍", "槍-拳": "槍", "槍-腿": "槍",
-                "拳-拳": "拳", "拳-腿": "拳", "腿-腿": "腿"
+                "腿": {"內門":"內", "外門":"外", "身法":"身法", "刀":"刀", "劍":"劍", "棍":"棍", "槍":"槍", "拳":"拳"},
+                "拳": {"內門":"內", "外門":"外", "身法":"身法", "刀":"刀。\n拳出掌心雷 選拳", "劍":"劍", "棍":"棍", "槍":"槍"},
+                "槍": {"內門":"內。\n內不出招+槍流血 賭槍", "外門":"外。\n外不出招+槍流血 賭槍", "身法":"身法。\n身法不出招+槍流血 賭槍", "刀":"刀。\n槍流血+增益賭槍", "劍":"劍。\n劍出裂天，賭劍。\n槍增益更多賭槍。", "棍":"棍"},
+                "棍": {"內門":"內。\n棍出璇風棍，賭棍", "外門":"外。\n棍出璇風棍，賭棍", "身法":"棍", "刀":"棍", "劍":"棍"},
+                "劍": {"內門":"內。\n劍出列天 賭劍", "外門":"外", "身法":"身法", "刀":"刀。\n劍出列天賭劍。"},
+                "刀": {"內門":"內", "外門":"外", "身法":"身法"},
+                "身法": {"內門":"一半機率。\n身法旋風棍，賭身法", "外門":"身法"},
+                "外門": {"內門":"外:出裂天 賭外\n內:出招多選內"}
             },
             "10-12": {
-                "內門-內門": "內門", "內門-外門": "內門。五五開，遺世界驅誰", "內門-身法": "內門。五五開，請控驅護", "內門-刀": "內門。刀控制多，嗜內", "內門-劍": "內門", "內門-棍": "內門", "內門-槍": "內門", "內門-拳": "內門。脈琉璃+天陣，婚契", "內門-腿": "內門",
-                "外門-外門": "外門", "外門-身法": "外門", "外門-刀": "外門", "外門-劍": "外門", "外門-棍": "外門。外走控，意外流出高技能，吸術", "外門-槍": "外門", "外門-拳": "外門。脈琉璃+天陣，婚契", "外門-腿": "外門",
-                "身法-身法": "身法", "身法-刀": "身法", "身法-劍": "身法", "身法-棍": "身法。五五開，意元氣", "身法-槍": "身法", "身法-拳": "身法. 脈琉璃+天陣，婚契", "身法-腿": "身法",
-                "刀-刀": "刀", "刀-劍": "刀。福仙降血感，婚契。刀偽無忌，只賭刀", "刀-棍": "刀", "刀-槍": "刀", "刀-拳": "刀", "刀-腿": "刀",
-                "劍-劍": "劍", "劍-棍": "劍", "劍-槍": "劍。拳控多，驅拳", "劍-拳": "劍。脈琉璃+天陣，婚契", "劍-腿": "劍",
-                "棍-棍": "棍", "棍-槍": "棍", "棍-拳": "棍", "棍-腿": "棍",
-                "槍-槍": "槍。拳控多，驅拳", "槍-拳": "槍。脈琉璃+天陣，婚契", "槍-腿": "槍",
-                "拳-拳": "拳。脈琉璃+天陣，婚契", "拳-腿": "拳", "腿-腿": "腿"
+                "腿": {"內門":"內。\n腿出地龍+天舞，賭腿", "外門":"外門。\n腿出地龍+天舞，賭腿", "身法":"身法。\n腿出地龍+天舞，賭腿", "刀":"刀", "劍":"劍。\n腿出地龍+天舞，賭腿", "棍":"棍", "槍":"槍。\n腿出地龍+天舞，賭腿", "拳":"拳。\n腿出地龍+天舞，賭腿"},
+                "拳": {"內門":"內", "外門":"外", "身法":"身法", "刀":"刀", "劍":"劍。\n拳控多，賭拳", "棍":"棍", "槍":"槍。\n拳控多，賭拳"},
+                "槍": {"內門":"內", "外門":"外出控，賭外。\n槍出高星技能 賭槍", "身法":"一半機率。", "刀":"刀", "劍":"槍", "棍":"棍"},
+                "棍": {"內門":"棍", "外門":"棍", "身法":"棍", "刀":"棍：仙舞血戰，選棍\n刀：先舞落日，選刀", "劍":"棍"},
+                "劍": {"內門":"內", "外門":"外", "身法":"身法", "刀":"刀"},
+                "刀": {"內門":"刀。\n內控多，賭內", "外門":"刀", "身法":"刀"},
+                "身法": {"內門":"一半機率。\n看誰控制多。", "外門":"身法"},
+                "外門": {"內門":"內"}
             },
             "13-15": {
-                "內門-內門": "內門", "內門-外門": "內門外", "內門-身法": "內門。五五開，意氣元氣", "內門-刀": "內門", "內門-劍": "內門", "內門-棍": "內門", "內門-槍": "內門。拳控制更多，婚契", "內門-拳": "內門。脈琉璃+天陣，婚契", "內門-腿": "內門",
-                "外門-外門": "外門", "外門-身法": "外門。刀血如舞，得神、壁刀、外血換演化、眼外", "外門-刀": "外門。刀血如舞，得神、壁刀、外血換演化、眼外", "外門-劍": "外門。眼。外血量破千，眼外", "外門-棍": "外門", "外門-槍": "外門", "外門-拳": "外門", "外門-腿": "外門",
-                "身法-身法": "身法", "身法-刀": "身法", "身法-劍": "身法", "身法-棍": "身法", "身法-槍": "身法。意控制更多，婚契", "身法-拳": "身法。脈琉璃+天陣，婚契", "身法-腿": "身法",
-                "刀-刀": "刀", "刀-劍": "刀。楓血血牛佛，眼楓。刀偽無忌，血反神，賭刀", "刀-棍": "刀。楓血血牛佛，眼楓。刀偽無忌，血反神，賭刀", "刀-槍": "刀", "刀-拳": "刀", "刀-腿": "刀",
-                "劍-劍": "劍", "劍-棍": "劍", "劍-槍": "劍。劍控扣，眼劍，拳控多，驅拳", "劍-拳": "劍。脈琉璃+天陣，婚契", "劍-腿": "劍",
-                "棍-棍": "棍", "棍-槍": "棍。劍控扣，眼劍，純武學系使更高，賭槍", "棍-拳": "棍", "棍-腿": "棍",
-                "槍-槍": "槍。拳控多，防拳。輪天機必意", "槍-拳": "槍。脈琉璃+天陣，婚契", "槍-腿": "槍",
-                "拳-拳": "拳。脈琉璃+天陣，婚契", "拳-腿": "拳", "腿-腿": "腿"
+                "腿": {"內門":"內。\n腿出地龍+天舞，賭腿", "外門":"外", "身法":"身法。\n腿出地龍+天舞，賭腿", "刀":"刀", "劍":"劍。\n腿出地龍+天舞，賭腿", "棍":"棍", "槍":"槍。\n腿出地龍+天舞，賭腿", "拳":"拳。\n腿出地龍+天舞，賭腿"},
+                "拳": {"內門":"內。\n拳控多，賭拳", "外門":"外", "身法":"身法。\n拳控多，賭拳", "刀":"刀", "劍":"劍，純陽賭劍。\n拳控多，賭拳", "棍":"棍", "槍":"槍（出天機必勝）。\n拳控多，賭拳。"},
+                "槍": {"內門":"內", "外門":"外", "身法":"身法", "刀":"刀", "劍":"劍，純陽賭劍。\n槍武學星級更高選槍", "棍":"棍"},
+                "棍": {"內門":"棍", "外門":"棍。\n外：血戰地龍賭外", "身法":"棍", "刀":"棍：血戰斗佛，選棍\n刀：先舞血舞洛神，選刀", "劍":"棍"},
+                "劍": {"內門":"內", "外門":"外", "身法":"身法", "刀":"刀"},
+                "刀": {"內門":"刀", "外門":"刀：先舞血舞落神，選刀。\n外：血戰地龍賭外", "身法":"刀"},
+                "身法": {"內門":"一半機率。\n看運氣。", "外門":"外"},
+                "外門": {"內門":"外"}
             }
         };
 
-        function clickGenre(genre) {
-            const index = selectedGenres.indexOf(genre);
+        const priorityOrder = ["腿", "拳", "槍", "棍", "劍", "刀", "身法", "外門"];
 
-            if (index > -1) {
-                selectedGenres.splice(index, 1);
-            } else {
-                if (selectedGenres.length < 2) {
-                    selectedGenres.push(genre);
+        let selectedSchools = [];
+        let currentRound = "1-3";
+
+        const schoolButtons = document.querySelectorAll('#schoolGrid .btn');
+        const roundButtons = document.querySelectorAll('.round-btn');
+        const resultCard = document.getElementById('resultCard');
+        const resultTitle = document.getElementById('resultTitle');
+        const resultContent = document.getElementById('resultContent');
+
+        schoolButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const name = btn.getAttribute('data-name');
+                if (selectedSchools.includes(name)) {
+                    selectedSchools = selectedSchools.filter(s => s !== name);
+                    btn.classList.remove('active');
                 } else {
-                    selectedGenres.shift();
-                    selectedGenres.push(genre);
+                    if (selectedSchools.length >= 2) {
+                        const shifted = selectedSchools.shift();
+                        document.querySelector(`[data-name="${shifted}"]`).classList.remove('active');
+                    }
+                    selectedSchools.push(name);
+                    btn.classList.add('active');
                 }
-            }
-
-            const buttons = document.querySelectorAll('.btn-genre');
-            buttons.forEach(btn => {
-                if (selectedGenres.includes(btn.innerText)) {
-                    btn.classList.add('selected');
-                } else {
-                    btn.classList.remove('selected');
-                }
+                updateResult();
             });
+        });
 
-            updateResult();
-        }
-
-        function selectRound(round) {
-            currentRound = round;
-            const buttons = document.querySelectorAll('.btn-round');
-            buttons.forEach(btn => {
-                if(btn.innerText.startsWith(round)) btn.classList.add('active');
-                else btn.classList.remove('active');
+        roundButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                roundButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentRound = btn.getAttribute('data-round');
+                updateResult();
             });
-            updateResult();
-        }
+        });
 
         function getWinKey(genreName) {
-            if (selectedGenres.length < 2) return "";
-            const otherGenre = selectedGenres[0] === genreName ? selectedGenres[1] : selectedGenres[0];
+            if (selectedSchools.length < 2) return "";
+            const otherGenre = selectedSchools[0] === genreName ? selectedSchools[1] : selectedSchools[0];
             const combo = [genreName, otherGenre].sort().join("_");
             return `WinCount_${currentRound}_${combo}_Winner_${genreName}`;
         }
 
         function updateResult() {
-            const noteSection = document.getElementById('noteSection');
-            const scoreSection = document.getElementById('scoreSection');
-            
-            if (selectedGenres.length < 2) {
-                let currentText = selectedGenres.length === 1 ? `已選：${selectedGenres[0]}` : "無";
-                document.getElementById('vsTitle').innerText = `已選擇流派 (${selectedGenres.length}/2)`;
-                document.getElementById('strategyResult').innerText = `請再點選一個流派。當前${currentText}`;
-                noteSection.style.display = "none"; 
-                scoreSection.style.display = "none";
+            if (selectedSchools.length < 2) {
+                resultCard.style.display = 'none';
                 return;
             }
 
-            const genreA = selectedGenres[0];
-            const genreB = selectedGenres[1];
+            const s1 = selectedSchools[0];
+            const s2 = selectedSchools[1];
 
-            document.getElementById('vsTitle').innerText = `${genreA} ⚔️ ${genreB} (${currentRound}輪)`;
+            let rowSchool, colSchool;
+            const idx1 = priorityOrder.indexOf(s1);
+            const idx2 = priorityOrder.indexOf(s2);
 
-            const key1 = `${genreA}-${genreB}`;
-            const key2 = `${genreB}-${genreA}`;
-            
-            const dataTable = winRateData[currentRound] || {};
-            const resultText = dataTable[key1] || dataTable[key2] || `雙方互點，此格子在原圖為常規過渡或空白。`;
+            if (idx1 < idx2 && idx1 !== -1) {
+                rowSchool = s1; colSchool = s2;
+            } else {
+                rowSchool = s2; colSchool = s1;
+            }
 
-            document.getElementById('strategyResult').innerHTML = resultText.replace(/，/g, '，<br>').replace(/、/g, '、<br>').replace(/。/g, '。<br>');
+            let text = "雙方互點，此對局在最新 Excel 中為常規過渡。";
+            const roundData = db[currentRound];
+            if (roundData[rowSchool] && roundData[rowSchool][colSchool]) {
+                text = roundData[rowSchool][colSchool];
+            } else if (roundData[colSchool] && roundData[colSchool][rowSchool]) {
+                text = roundData[colSchool][rowSchool];
+            }
 
-            // --- 載入戰績與智慧排序顯示邏輯 ---
-            scoreSection.style.display = "block";
-            document.getElementById('scoreTitle').innerText = `📊 [${currentRound}輪] 實戰勝負統計：`;
-            
-            document.getElementById('btnLeftWin').innerText = `👑 【${genreA}】贏了`;
-            document.getElementById('btnRightWin').innerText = `👑 【${genreB}】贏了`;
-            
+            resultTitle.innerHTML = `${s1} ⚔️ ${s2} (${currentRound}輪)`;
+            resultContent.textContent = text;
+            resultCard.style.display = 'block';
+
+            // --- 戰績與智慧排序看板更新 ---
+            document.getElementById('btnLeftWin').innerText = `👑 【${s1}】贏了`;
+            document.getElementById('btnRightWin').innerText = `👑 【${s2}】贏了`;
             updateScoreDisplay();
 
-            // --- 載入備註邏輯 ---
-            noteSection.style.display = "block"; 
-            document.getElementById('noteLabel').innerText = `✏️ [${currentRound}輪 ${genreA}-${genreB}] 的備註：`;
-            
-            const sortedGenres = [...selectedGenres].sort();
-            const noteKey = `Note_${currentRound}_${sortedGenres[0]}_${sortedGenres[1]}`;
-            const savedNote = localStorage.getItem(noteKey) || "";
-            document.getElementById('noteInput').value = savedNote;
+            // --- 備註更新 ---
+            document.getElementById('noteLabel').innerText = `✏️ [${currentRound}輪 ${s1}-${s2}] 配置備註：`;
+            const sortedSchools = [...selectedSchools].sort();
+            const noteKey = `Note_${currentRound}_${sortedSchools[0]}_${sortedSchools[1]}`;
+            document.getElementById('noteInput').value = localStorage.getItem(noteKey) || "";
         }
 
-        // 刷新勝負看板（包含智慧高勝率排序排序與綠色強烈提示）
         function updateScoreDisplay() {
-            const genreA = selectedGenres[0];
-            const genreB = selectedGenres[1];
+            const s1 = selectedSchools[0];
+            const s2 = selectedSchools[1];
             
-            const winA = parseInt(localStorage.getItem(getWinKey(genreA))) || 0;
-            const winB = parseInt(localStorage.getItem(getWinKey(genreB))) || 0;
+            const winA = parseInt(localStorage.getItem(getWinKey(s1))) || 0;
+            const winB = parseInt(localStorage.getItem(getWinKey(s2))) || 0;
             const total = winA + winB;
             
             let rateA = total > 0 ? Math.round((winA / total) * 100) : 0;
@@ -428,48 +440,45 @@
             
             const tipElement = document.getElementById('highRateTip');
 
-            // 智慧排列顯示邏輯：誰強誰就排在面板最左邊
+            // 智慧排列顯示邏輯：誰的累積勝場多，誰就主動在面板上站左邊
             if (winB > winA) {
-                // 如果後選的 B 勝場多，看板主動改以 B 為主視角顯示
-                document.getElementById('scoreDisplay').innerText = `【${genreB}】 ${winB} 勝  vs  【${genreA}】 ${winA} 勝  ( 勝率: ${rateB}% )`;
-                tipElement.innerText = `🔥 隱性排列優化：【${genreB}】目前在此輪次勝率較高！`;
+                document.getElementById('scoreDisplay').innerText = `【${s2}】 ${winB} 勝  vs  【${s1}】 ${winA} 勝  ( 勝率: ${rateB}% )`;
+                tipElement.innerText = `🔥 隱性排列優化：【${s2}】目前在此輪次勝率較高！`;
+                tipElement.style.with = "inline-block";
                 tipElement.style.display = "inline-block";
             } else if (winA > winB) {
-                // 如果先選的 A 勝場多
-                document.getElementById('scoreDisplay').innerText = `【${genreA}】 ${winA} 勝  vs  【${genreB}】 ${winB} 勝  ( 勝率: ${rateA}% )`;
-                tipElement.innerText = `🔥 隱性排列優化：【${genreA}】目前在此輪次勝率較高！`;
+                document.getElementById('scoreDisplay').innerText = `【${s1}】 ${winA} 勝  vs  【${s2}】 ${winB} 勝  ( 勝率: ${rateA}% )`;
+                tipElement.innerText = `🔥 隱性排列優化：【${s1}】目前在此輪次勝率較高！`;
                 tipElement.style.display = "inline-block";
             } else {
-                // 勝場一樣或都為 0，按正常 A vs B 顯示
-                document.getElementById('scoreDisplay').innerText = `【${genreA}】 ${winA} 勝  vs  【${genreB}】 ${winB} 勝  ( 勝率: 50% )`;
+                document.getElementById('scoreDisplay').innerText = `【${s1}】 ${winA} 勝  vs  【${s2}】 ${winB} 勝  ( 勝率: 0% )`;
                 tipElement.style.display = "none";
             }
         }
 
         function addWin(side) {
-            const genreName = side === 'left' ? selectedGenres[0] : selectedGenres[1];
+            const genreName = side === 'left' ? selectedSchools[0] : selectedSchools[1];
             const key = getWinKey(genreName);
             if (!key) return;
             
             let currentCount = parseInt(localStorage.getItem(key)) || 0;
             localStorage.setItem(key, currentCount + 1);
-            
             updateScoreDisplay();
         }
 
         function resetRecord() {
-            const genreA = selectedGenres[0];
-            const genreB = selectedGenres[1];
-            if (confirm(`確定要將 [${genreA} vs ${genreB}] 的勝場紀錄全部歸零嗎？`)) {
-                localStorage.setItem(getWinKey(genreA), 0);
-                localStorage.setItem(getWinKey(genreB), 0);
+            const s1 = selectedSchools[0];
+            const s2 = selectedSchools[1];
+            if (confirm(`確定要將 [${s1} vs ${s2}] 的勝場紀錄全部歸零嗎？`)) {
+                localStorage.setItem(getWinKey(s1), 0);
+                localStorage.setItem(getWinKey(s2), 0);
                 updateScoreDisplay();
             }
         }
 
         function saveNote() {
-            const sortedGenres = [...selectedGenres].sort();
-            const noteKey = `Note_${currentRound}_${sortedGenres[0]}_${sortedGenres[1]}`;
+            const sortedSchools = [...selectedSchools].sort();
+            const noteKey = `Note_${currentRound}_${sortedSchools[0]}_${sortedSchools[1]}`;
             const noteValue = document.getElementById('noteInput').value;
             localStorage.setItem(noteKey, noteValue);
             alert("備註已成功儲存！");
