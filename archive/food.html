@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>江湖流派對戰勝率計算機</title>
+    <title>江湖流派對戰勝率計算機 - 智慧完全體</title>
     <style>
         body {
             background-color: #c9a0a0;
@@ -87,9 +87,8 @@
             margin-bottom: 15px;
         }
 
-        /* 戰績統計區樣式 */
         .score-section {
-            background: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.65);
             padding: 12px;
             border-radius: 6px;
             margin-bottom: 15px;
@@ -101,15 +100,26 @@
             font-size: 16px;
             font-weight: bold;
             margin-bottom: 8px;
-            color: #333;
+            color: #222;
         }
 
         .score-board {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: bold;
-            color: #d93838;
+            color: #c92a2a;
+            margin-bottom: 5px;
+            letter-spacing: 0.5px;
+        }
+
+        .high-rate-tip {
+            font-size: 15px;
+            color: #2b8a3e;
+            font-weight: bold;
             margin-bottom: 10px;
-            letter-spacing: 1px;
+            background: rgba(43, 138, 62, 0.1);
+            padding: 4px;
+            border-radius: 4px;
+            display: inline-block;
         }
 
         .score-buttons {
@@ -127,11 +137,10 @@
             cursor: pointer;
             color: white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            word-break: break-all;
         }
 
-        .btn-left-win { background-color: #ff922b; } /* 橘色按鈕 */
-        .btn-right-win { background-color: #5c7cfa; } /* 藍色按鈕 */
+        .btn-left-win { background-color: #ff922b; } 
+        .btn-right-win { background-color: #5c7cfa; } 
         
         .btn-reset-score {
             background: none;
@@ -143,7 +152,6 @@
             cursor: pointer;
         }
 
-        /* 備註功能區樣式 */
         .note-section {
             background: rgba(0, 0, 0, 0.05);
             padding: 12px;
@@ -184,10 +192,6 @@
             cursor: pointer;
             width: 100%;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .btn-save-note:active {
-            background-color: #237032;
         }
 
         .rounds-container {
@@ -246,7 +250,8 @@
         
         <div class="score-section" id="scoreSection" style="display: none;">
             <div class="score-title" id="scoreTitle">實戰對決勝率統計</div>
-            <div class="score-board" id="scoreDisplay">0 勝 / 0 勝 (勝率: 0%)</div>
+            <div class="score-board" id="scoreDisplay">載入中...</div>
+            <div id="highRateTip" class="high-rate-tip" style="display: none;"></div>
             <div class="score-buttons">
                 <button class="btn-score btn-left-win" id="btnLeftWin" onclick="addWin('left')">【A】贏了</button>
                 <button class="btn-score btn-right-win" id="btnRightWin" onclick="addWin('right')">【B】贏了</button>
@@ -267,7 +272,7 @@
 
         document.querySelectorAll('.btn-round')[0].classList.add('active');
 
-        // 資料庫
+        // 2026 最新官方 txt 完美對照數據庫
         const winRateData = {
             "1-3": {
                 "內門-內門": "內門", "內門-外門": "內門", "內門-身法": "內門", "內門-刀": "內門", "內門-劍": "內門", "內門-棍": "內門", "內門-槍": "內門。槍招愈多，流血多，鐵腕", "內門-拳": "內門", "內門-腿": "內門",
@@ -277,19 +282,17 @@
                 "劍-劍": "劍", "劍-棍": "劍", "劍-槍": "劍", "劍-拳": "劍", "劍-腿": "劍",
                 "棍-棍": "棍", "棍-槍": "棍", "棍-拳": "棍", "棍-腿": "棍",
                 "槍-槍": "槍", "槍-拳": "槍", "槍-腿": "槍",
-                "拳-拳": "拳", "拳-腿": "拳",
-                "腿-腿": "腿"
+                "拳-拳": "拳", "拳-腿": "拳", "腿-腿": "腿"
             },
             "4-6": {
                 "內門-內門": "內門", "內門-外門": "內門", "內門-身法": "內門。身法大腦+大槍，隨身法", "內門-刀": "內門", "內門-劍": "內門。極太乙+玄黃，婚契", "內門-棍": "內門。索聚少陽，補槍", "內門-槍": "內門。槍疾風刺，爆槍", "內門-拳": "內門", "內門-腿": "內門。身法。內強",
-                "外門-外門": "外門", "外門-身法": "外門。身法大腦+大槍，隨身法", "外門-刀": "外門", "外門-劍": "外門。極太乙+玄黃，婚契", "外門-棍": "外門。催夾冷剛，補槍", "外門-槍": "外門。槍疾風刺，爆槍", "外門-拳": "外門。五五開，外掌心蓄，贈外", "外門-腿": "外門互攻，腿攻勢較強",
+                "外門-外門": "外門", "外門-身法": "外門。身法大腦+大槍，隨身法", "外門-刀": "外門", "外門-劍": "外門. 極太乙+玄黃，婚契", "外門-棍": "外門。催夾冷剛，補槍", "外門-槍": "外門。槍疾風刺，爆槍", "外門-拳": "外門。五五開，外掌心蓄，贈外", "外門-腿": "外門互攻，腿攻勢較強",
                 "身法-身法": "身法", "身法-刀": "身法", "身法-劍": "身法。極太乙出劍前，驅身法", "身法-棍": "身法。索聚少陽，補槍", "身法-槍": "身法。槍疾風刺，爆槍", "身法-拳": "身法", "身法-腿": "身法",
                 "刀-刀": "刀", "刀-劍": "刀。極太乙+玄黃，婚契", "刀-棍": "刀。索聚少陽，補槍", "刀-槍": "刀", "刀-拳": "刀。拳掌心蓄，贈拳", "刀-腿": "刀",
                 "劍-劍": "劍", "劍-棍": "劍", "劍-槍": "劍。劍出神門，兩儀，眼劍", "劍-拳": "劍", "劍-腿": "劍",
                 "棍-棍": "棍", "棍-槍": "棍。槍3下流血，爆槍", "棍-拳": "棍。拳掌心蓄，贈拳", "棍-腿": "棍",
                 "槍-槍": "槍", "槍-拳": "槍。拳掌心蓄，贈拳", "槍-腿": "槍",
-                "拳-拳": "拳。五五開，拳掌心蓄，贈拳", "拳-腿": "拳",
-                "腿-腿": "腿"
+                "拳-拳": "拳。五五開，拳掌心蓄，贈拳", "拳-腿": "拳", "腿-腿": "腿"
             },
             "7-9": {
                 "內門-內門": "內門", "內門-外門": "內門。外御天，意外內血眼多，隨內", "內門-身法": "內門。五五開，身法隨風驅，隨身法", "內門-刀": "內門", "內門-劍": "內門。劍御天，婚契", "內門-棍": "內門。注索聚驅，補槍", "內門-槍": "內門。內不流血+陰液痛，賭槍", "內門-拳": "內門", "內門-腿": "內門",
@@ -299,19 +302,17 @@
                 "劍-劍": "劍", "劍-棍": "劍", "劍-槍": "劍。劍圈大，陰液痛讓意更多，賭槍", "劍-拳": "劍", "劍-腿": "劍",
                 "棍-棍": "棍", "棍-槍": "棍", "棍-拳": "棍", "棍-腿": "棍",
                 "槍-槍": "槍", "槍-拳": "槍", "槍-腿": "槍",
-                "拳-拳": "拳", "拳-腿": "拳",
-                "腿-腿": "腿"
+                "拳-拳": "拳", "拳-腿": "拳", "腿-腿": "腿"
             },
             "10-12": {
                 "內門-內門": "內門", "內門-外門": "內門。五五開，遺世界驅誰", "內門-身法": "內門。五五開，請控驅護", "內門-刀": "內門。刀控制多，嗜內", "內門-劍": "內門", "內門-棍": "內門", "內門-槍": "內門", "內門-拳": "內門。脈琉璃+天陣，婚契", "內門-腿": "內門",
                 "外門-外門": "外門", "外門-身法": "外門", "外門-刀": "外門", "外門-劍": "外門", "外門-棍": "外門。外走控，意外流出高技能，吸術", "外門-槍": "外門", "外門-拳": "外門。脈琉璃+天陣，婚契", "外門-腿": "外門",
-                "身法-身法": "身法", "身法-刀": "身法", "身法-劍": "身法", "身法-棍": "身法。五五開，意元氣", "身法-槍": "身法", "身法-拳": "身法。脈琉璃+天陣，婚契", "身法-腿": "身法",
+                "身法-身法": "身法", "身法-刀": "身法", "身法-劍": "身法", "身法-棍": "身法。五五開，意元氣", "身法-槍": "身法", "身法-拳": "身法. 脈琉璃+天陣，婚契", "身法-腿": "身法",
                 "刀-刀": "刀", "刀-劍": "刀。福仙降血感，婚契。刀偽無忌，只賭刀", "刀-棍": "刀", "刀-槍": "刀", "刀-拳": "刀", "刀-腿": "刀",
-                "劍-劍": "劍", "劍-棍": "劍", "劍-槍": "劍。拳控多，驅拳", "劍-拳": "劍. 脈琉璃+天陣，婚契", "劍-腿": "劍",
+                "劍-劍": "劍", "劍-棍": "劍", "劍-槍": "劍。拳控多，驅拳", "劍-拳": "劍。脈琉璃+天陣，婚契", "劍-腿": "劍",
                 "棍-棍": "棍", "棍-槍": "棍", "棍-拳": "棍", "棍-腿": "棍",
-                "槍-槍": "槍。拳控多 Gord，驅拳", "槍-拳": "槍。脈琉璃+天陣，婚契", "槍-腿": "槍",
-                "拳-拳": "拳。脈琉璃+天陣，婚契", "拳-腿": "拳",
-                "腿-腿": "腿"
+                "槍-槍": "槍。拳控多，驅拳", "槍-拳": "槍。脈琉璃+天陣，婚契", "槍-腿": "槍",
+                "拳-拳": "拳。脈琉璃+天陣，婚契", "拳-腿": "拳", "腿-腿": "腿"
             },
             "13-15": {
                 "內門-內門": "內門", "內門-外門": "內門外", "內門-身法": "內門。五五開，意氣元氣", "內門-刀": "內門", "內門-劍": "內門", "內門-棍": "內門", "內門-槍": "內門。拳控制更多，婚契", "內門-拳": "內門。脈琉璃+天陣，婚契", "內門-腿": "內門",
@@ -321,8 +322,7 @@
                 "劍-劍": "劍", "劍-棍": "劍", "劍-槍": "劍。劍控扣，眼劍，拳控多，驅拳", "劍-拳": "劍。脈琉璃+天陣，婚契", "劍-腿": "劍",
                 "棍-棍": "棍", "棍-槍": "棍。劍控扣，眼劍，純武學系使更高，賭槍", "棍-拳": "棍", "棍-腿": "棍",
                 "槍-槍": "槍。拳控多，防拳。輪天機必意", "槍-拳": "槍。脈琉璃+天陣，婚契", "槍-腿": "槍",
-                "拳-拳": "拳。脈琉璃+天陣，婚契", "拳-腿": "拳",
-                "腿-腿": "腿"
+                "拳-拳": "拳。脈琉璃+天陣，婚契", "拳-腿": "拳", "腿-腿": "腿"
             }
         };
 
@@ -362,11 +362,9 @@
             updateResult();
         }
 
-        // 基於流派名稱取得對應的 LocalStorage 儲存 Key
         function getWinKey(genreName) {
             if (selectedGenres.length < 2) return "";
             const otherGenre = selectedGenres[0] === genreName ? selectedGenres[1] : selectedGenres[0];
-            // 排序組合名，確保 A vs B 和 B vs A 共享同一個計數槽，但用贏家作為後綴
             const combo = [genreName, otherGenre].sort().join("_");
             return `WinCount_${currentRound}_${combo}_Winner_${genreName}`;
         }
@@ -397,11 +395,10 @@
 
             document.getElementById('strategyResult').innerHTML = resultText.replace(/，/g, '，<br>').replace(/、/g, '、<br>').replace(/。/g, '。<br>');
 
-            // --- 載入戰績邏輯 ---
+            // --- 載入戰績與智慧排序顯示邏輯 ---
             scoreSection.style.display = "block";
             document.getElementById('scoreTitle').innerText = `📊 [${currentRound}輪] 實戰勝負統計：`;
             
-            // 動態修改按鈕名稱為當前選中的流派
             document.getElementById('btnLeftWin').innerText = `👑 【${genreA}】贏了`;
             document.getElementById('btnRightWin').innerText = `👑 【${genreB}】贏了`;
             
@@ -411,34 +408,44 @@
             noteSection.style.display = "block"; 
             document.getElementById('noteLabel').innerText = `✏️ [${currentRound}輪 ${genreA}-${genreB}] 的備註：`;
             
-            // 備註的 key 也做排序處理
             const sortedGenres = [...selectedGenres].sort();
             const noteKey = `Note_${currentRound}_${sortedGenres[0]}_${sortedGenres[1]}`;
             const savedNote = localStorage.getItem(noteKey) || "";
             document.getElementById('noteInput').value = savedNote;
         }
 
-        // 刷新勝負看板
+        // 刷新勝負看板（包含智慧高勝率排序排序與綠色強烈提示）
         function updateScoreDisplay() {
             const genreA = selectedGenres[0];
             const genreB = selectedGenres[1];
             
-            const keyA = getWinKey(genreA);
-            const keyB = getWinKey(genreB);
-            
-            const winA = parseInt(localStorage.getItem(keyA)) || 0;
-            const winB = parseInt(localStorage.getItem(keyB)) || 0;
+            const winA = parseInt(localStorage.getItem(getWinKey(genreA))) || 0;
+            const winB = parseInt(localStorage.getItem(getWinKey(genreB))) || 0;
             const total = winA + winB;
             
-            let rateA = 0;
-            if (total > 0) {
-                rateA = Math.round((winA / total) * 100);
-            }
+            let rateA = total > 0 ? Math.round((winA / total) * 100) : 0;
+            let rateB = total > 0 ? Math.round((winB / total) * 100) : 0;
             
-            document.getElementById('scoreDisplay').innerText = `【${genreA}】 ${winA} 勝  vs  【${genreB}】 ${winB} 勝  ( ${genreA} 勝率: ${rateA}% )`;
+            const tipElement = document.getElementById('highRateTip');
+
+            // 智慧排列顯示邏輯：誰強誰就排在面板最左邊
+            if (winB > winA) {
+                // 如果後選的 B 勝場多，看板主動改以 B 為主視角顯示
+                document.getElementById('scoreDisplay').innerText = `【${genreB}】 ${winB} 勝  vs  【${genreA}】 ${winA} 勝  ( 勝率: ${rateB}% )`;
+                tipElement.innerText = `🔥 隱性排列優化：【${genreB}】目前在此輪次勝率較高！`;
+                tipElement.style.display = "inline-block";
+            } else if (winA > winB) {
+                // 如果先選的 A 勝場多
+                document.getElementById('scoreDisplay').innerText = `【${genreA}】 ${winA} 勝  vs  【${genreB}】 ${winB} 勝  ( 勝率: ${rateA}% )`;
+                tipElement.innerText = `🔥 隱性排列優化：【${genreA}】目前在此輪次勝率較高！`;
+                tipElement.style.display = "inline-block";
+            } else {
+                // 勝場一樣或都為 0，按正常 A vs B 顯示
+                document.getElementById('scoreDisplay').innerText = `【${genreA}】 ${winA} 勝  vs  【${genreB}】 ${winB} 勝  ( 勝率: 50% )`;
+                tipElement.style.display = "none";
+            }
         }
 
-        // 按下某一邊贏了
         function addWin(side) {
             const genreName = side === 'left' ? selectedGenres[0] : selectedGenres[1];
             const key = getWinKey(genreName);
@@ -450,7 +457,6 @@
             updateScoreDisplay();
         }
 
-        // 重設該對局戰績
         function resetRecord() {
             const genreA = selectedGenres[0];
             const genreB = selectedGenres[1];
