@@ -26,34 +26,6 @@
     </div>
 
     <script>
-        // 攔截所有動態產生的 <img> 並強制加上 loading="lazy"
-        const imgObserver = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                mutation.addedNodes.forEach((node) => {
-                    if (node.tagName === 'IMG') {
-                        node.setAttribute('loading', 'lazy');
-                    } else if (node.querySelectorAll) {
-                        node.querySelectorAll('img').forEach((img) => img.setAttribute('loading', 'lazy'));
-                    }
-                });
-            });
-        });
-        imgObserver.observe(document.documentElement, { childList: true, subtree: true });
-
-        const STORAGE_KEY = "poya_auth_token";
-        const EXPIRE_MS = 60 * 60 * 1000; // 1 小時
-
-        window.onload = function() {
-            const token = localStorage.getItem(STORAGE_KEY);
-            if (token) {
-                const data = JSON.parse(token);
-                if (new Date().getTime() < data.expire) { renderSystem(); }
-            }
-        };
-
-        // 後續內容完全保持不變...
-
-    <script>
         const STORAGE_KEY = "poya_auth_token";
         const EXPIRE_MS = 60 * 60 * 1000; // 1 小時
 
